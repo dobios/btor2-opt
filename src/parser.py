@@ -23,9 +23,9 @@ def find_inst(p: list[Instruction], id: int) -> Instruction:
     assert inst is not None, f"Undeclared instruction used with id: {id}"
     return inst
 
-def parse(inp: str) -> list[Instruction]:
+def parse(inp: list[str]) -> list[Instruction]:
     # Split the string into instructions and read them 1 by 1
-    for line in inp.splitlines():
+    for line in inp:
         inst = line.split(" ")
         lid = int(inst[0])
         tag = inst[1]
