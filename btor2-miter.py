@@ -17,7 +17,7 @@
 ##########################################################################
 
 from src.program import * 
-from src.parser import *
+from src.parse import *
 import os
 import subprocess
 import sys
@@ -71,8 +71,8 @@ def create_miter(fir_filename: str) -> list[Instruction]:
     # Run it through the SFC and store the output
     os.system(f"firrtl --compiler sverilog -E btor2 -i {fir_filename} -o tmp.btor2")
     sfc_p = ""
-    with open("tmp.btor2", "r") as f:
-        sfc_p = f.readlines()
+    with open("tmp.btor2", "r") as file:
+        sfc_p = file.read()
 
     # Run the FIRRTL design through firtool
     circt_p = subprocess.run(f"firtool --btor2 {fir_filename}", stdout=subprocess.PIPE).stdout.decode('utf-8') 

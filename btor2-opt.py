@@ -18,7 +18,7 @@
 
 from src.program import *
 from src.passes import *
-from src.parser import *
+from src.parse import *
 import sys
 
 if __name__ == "__main__":
