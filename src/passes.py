@@ -17,6 +17,7 @@
 ##########################################################################
 
 from program import *
+from program import Instruction
 
 # Base clas for compiler pass
 # @param id: the unique name of this pass
@@ -44,9 +45,57 @@ class RenameInputs(Pass):
             else:
                 res.append(inst)
         return res
+    
+# Makes sure that all states are initialized
+class InitAllStates(Pass):
+    def __init__(self):
+        super().__init__("init-all-states")
+
+    def run(p: list[Instruction]) -> list[Instruction]:
+        res = []
+        # start by extracting all states
+        states: list[Instruction] = [s for s in p if isinstance(s, State)]
+
+        # Create def-use pairs for states + initializations
+        state_inits = [(s, 
+            next((op for op in p if (s.isin(op.operands) and isinstance(op, Init))), None)
+        ) for s in states]
+
+        # Extract all uninitialized states
+        uninit_states = [s for (s, initop) in state_inits if initop is None]
+
+        # Insert new inits where needed
+        res = []
+        lid = 1 # Keep track of lid
+        for inst in p:
+            if isinstance(inst, State):
+                # Check if the state was initialized
+                if inst.isin(uninit_states):
+                    inst.lid = lid
+                    lid += 1
+                    res.append(inst)
+                    # Initialize all states to 0
+                    zero = Constd(lid, inst.operands[0], 0)
+                    lid += 1
+                    res.append(zero)
+                    res.append(Init(lid, inst.operands[0], inst, zero))
+                    lid += 1
+                else:
+                    # Update lid
+                    inst.lid = lid
+                    lid += 1
+                    res.append(inst)
+            else:
+                # Update lid
+                inst.lid = lid
+                lid += 1
+                res.append(inst)
+        return res
+
+
 
 # List containing all passes
-all_passes = [RenameInputs()]
+all_passes = [RenameInputs(), InitAllStates()]
 
 # Retrieves a pass from the list given an id
 def find_pass(p: list[Pass], id: str) -> Pass:
