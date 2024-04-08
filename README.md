@@ -9,7 +9,7 @@ This repo contains two main scripts:
 The rest of the code can be found in the `src` folder, which contains a basic parser for `btor2` (not entirely complete, but supports anything `firtool --btor2` can produce), an internal representation of the language and a simple pass infrastructure, where you can add any of you custom passes.  
   
 ## Adding a Pass  
-Simply create a new class in `src/passes.py` that inherits from `Pass`. The in the constructor, make sure you give it a name. The pass's logic itself is written by overiding the `run(p: list[Instruction]) -> list[Instruction]` method. The pass must then be instantiated in the `all_passes` list.  
+Simply create a new class (as its own file) in `src/passes` that inherits from `Pass`. Then in the constructor, make sure you give it a name. The pass's logic itself is written by overiding the `run(p: list[Instruction]) -> list[Instruction]` method. The pass must then be imported in `src/passes/passes.py` and instantiated in the `all_passes` list. Passes are grouped either in `transforms`, which contain all of the passes that transform the AST, and `validation`, which contains all of the passes used to gurantee the syntactic correctness of the output program.  
   
 Here is a simple example pass that renames all inputs to "inp_n".   
 ```python
