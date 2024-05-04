@@ -4,7 +4,7 @@ Very basic btor2 parser, circuit miter, and code optimizer.
 ## Overview  
 This repo contains two main scripts:   
   - `btor2-opt`: Takes a `.btor2` file and a list of pass names as argument and prints out the transformed result.  
-  - `btor2-miter`: Takes a `.fir` file as input and runs it through `firrtl` and `firtool` to obtain two `.btor2` designs which are then merged into a single miter circuit before being returned to the user. Note that this requires having `firrtl` and `firtool` in your path, specifically a [version of `firtool` that has the `--btor2` flag](https://github.com/Dobios/circt/pull/4).  
+  - `btor2-miter`: Takes a `.fir` file as input and runs it through `firrtl` and `firtool` to obtain two `.btor2` designs which are then merged into a single miter circuit before being returned to the user. Note that this requires having `firrtl` and `firtool` in your path, specifically a [version of `firtool` that has the `--btor2` flag](https://github.com/llvm/circt/pull/6947). 
     
 The rest of the code can be found in the `src` folder, which contains a basic parser for `btor2` (not entirely complete, but supports anything `firtool --btor2` can produce), an internal representation of the language and a simple pass infrastructure, where you can add any of you custom passes.  
   
