@@ -25,10 +25,10 @@ tags = ["sort","input", "output", "bad", "constraint", "zero",
         "add", "sub", "mul", "sdiv", "udiv", "smod", "sll", 
         "srl", "sra", "and", "or", "xor", "concat", "not",
         "eq", "neq", "ugt", "sgt", "ugte", "sgte", "ult",
-        "slt", "ulte", "slte"]
+        "slt", "ulte", "slte", "uext"]
 
 # All legal sort types
-sort_tags = ["bitvector", "array"]
+sort_tags = ["bitvector", "bitvec", "array"]
 
 # Base class for an instruction
 # @param lid: the line identifier of the instruction
@@ -60,7 +60,9 @@ class Instruction:
         return False
 
     def serialize(self) -> str:
-        return str(self.lid) + " " + self.inst + " " + [str(op.lid) + " " for op in self.operands]
+        return str(self.lid) + " " + self.inst + " " + \
+            ' '.join([(str(op.lid) if isinstance(op, Instruction) else str(op)) + " " \
+                      for op in self.operands ])
     
 def serialize_p(p: list[Instruction]) -> str:
     return reduce(lambda acc, s: acc + s.serialize() + "\n", p, "")
@@ -76,16 +78,16 @@ def get_inst(p: list[Instruction], lid: int) -> Instruction:
 # @param type: {bitvector | array}, the type of sort we are declaring
 # @param width: the width of the declared sort
 class Sort(Instruction):
-    def __init__(self, lid: int, type: str, width: int):
+    def __init__(self, lid: int, typ: str, width: int):
         super().__init__(lid, "sort", [])
-        self.type: str = type
+        self.typ: str = typ
         self.width: int = width
 
     def eq(self, inst) -> bool:
-        return super().eq(inst) and self.type == inst.type and self.width == inst.width
+        return super().eq(inst) and self.typ == inst.typ and self.width == inst.width
     
     def serialize(self) -> str:
-        return super().serialize() + type + " " + str(self.width)
+        return super().serialize() + self.typ + " " + str(self.width)
 
 # Input instruction: declares an input
 # @param sort: the sort defining the type of this input
@@ -303,3 +305,8 @@ class Ulte(Instruction):
 class Slte(Instruction):
     def __init__(self, lid: int, sort: Instruction, op1: Instruction, op2: Instruction):
         super().__init__(lid, "slte", [sort, op1, op2])
+
+class Uext(Instruction):
+    def __init__(self, lid: int, sort: Instruction, op: Instruction, width: int, name: str):
+        super().__init__(lid, "uext", [sort, sort, op, width, name])
+        self.width: int = width

@@ -16,7 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from program import *
+from .program import *
 
 def find_inst(p: list[Instruction], id: int) -> Instruction:
     inst = get_inst(p, id)
@@ -25,11 +25,14 @@ def find_inst(p: list[Instruction], id: int) -> Instruction:
 
 def parse(inp: list[str]) -> list[Instruction]:
     # Split the string into instructions and read them 1 by 1
+    p = []
     for line in inp:
         inst = line.split(" ")
+        # BTOR comment
+        if inst[0] == ";":
+            continue
         lid = int(inst[0])
         tag = inst[1]
-        p = []
 
         # Check if tag is valid
         assert tag in tags, f"Unsupported operation type: {tag} in {line}"
@@ -47,6 +50,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 
                 # Construct instruction
                 op = Sort(lid, inst[2], int(inst[3]))
+
 
             case "input":
                 # Sanity check: verify that instruction is well formed
@@ -221,8 +225,8 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 cond = find_inst(p, int(inst[3]))
-                t = find_inst(int(inst[4]))
-                f = find_inst(int(inst[5]))
+                t = find_inst(p, int(inst[4]))
+                f = find_inst(p, int(inst[5]))
 
                 # Construct instruction
                 op = Ite(lid, sort, cond, t, f)
@@ -563,7 +567,20 @@ def parse(inp: list[str]) -> list[Instruction]:
 
                 # Construct instruction
                 op = Slte(lid, sort, op1, op2)
+            
+            case "uext":
+                # Sanity check: verify that instruction is well formed
+                assert len(inst) >= 6,\
+                    "sort instruction must be of the form: <lid> uext <sid> <opid> <width> <name>. Found: " + line
                 
+                # Find the operands associated to this instruction
+                sort = find_inst(p, int(inst[2]))
+                operand = find_inst(p, int(inst[3]))
+                width = int(inst[4])
+
+                # Construct instruction
+                op = Uext(lid, sort, operand, width, inst[5])
+
             case _:
                 print(f"Unsupported operation type: {tag} in {line}")
                 exit(1)

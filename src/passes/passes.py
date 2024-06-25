@@ -16,7 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from program import Instruction
+from ..program import Instruction
 
 # Base clas for compiler pass
 # @param id: the unique name of this pass
