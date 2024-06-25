@@ -17,7 +17,7 @@
 ##########################################################################
 
 from src.program import *
-from src.passes.passes import *
+from src.passes.allpasses import *
 from src.parse import *
 import sys
 
