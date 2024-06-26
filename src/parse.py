@@ -175,7 +175,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 assert isinstance(sort, Sort), f"State sort must be a Sort. Found: " + line
-                name = inst[3]
+                name = inst[3].strip()
 
                 # Construct instruction
                 op = State(lid, sort, name)
