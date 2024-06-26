@@ -55,10 +55,11 @@ def parse(inp: list[str]) -> list[Instruction]:
             case "input":
                 # Sanity check: verify that instruction is well formed
                 assert len(inst) >= 4,\
-                    "sort instruction must be of the form: <lid> input <sid> <name>. Found: " + line
+                    "input instruction must be of the form: <lid> input <sid> <name>. Found: " + line
                 
                 # Find the sort associated to this instruction
                 sort = find_inst(p, int(inst[2]))
+                assert isinstance(sort, Sort), f"Input sort must be a Sort. Found: " + line
 
                 # Construct instruction
                 op = Input(lid, sort, inst[3])
@@ -66,7 +67,7 @@ def parse(inp: list[str]) -> list[Instruction]:
             case "output":
                 # Sanity check: verify that instruction is well formed
                 assert len(inst) >= 3,\
-                    "sort instruction must be of the form: <lid> output <opid>. Found: " + line
+                    "input instruction must be of the form: <lid> output <opid>. Found: " + line
                 
                 # Find the op associated to this instruction
                 out = find_inst(p, int(inst[2]))
@@ -160,7 +161,8 @@ def parse(inp: list[str]) -> list[Instruction]:
                 
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
-                value = int(inst[3])
+                # Default base is 2
+                value = int(inst[3], 2)
 
                 # Construct instruction
                 op = Const(lid, sort, value)
@@ -168,10 +170,11 @@ def parse(inp: list[str]) -> list[Instruction]:
             case "state":
                 # Sanity check: verify that instruction is well formed
                 assert len(inst) >= 4,\
-                    "sort instruction must be of the form: <lid> state <sid> <name>. Found: " + line
+                    "state instruction must be of the form: <lid> state <sid> <name>. Found: " + line
                 
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
+                assert isinstance(sort, Sort), f"State sort must be a Sort. Found: " + line
                 name = inst[3]
 
                 # Construct instruction
@@ -239,7 +242,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 lhs = find_inst(p, int(inst[3]))
-                rhs = find_inst(int(inst[4]))
+                rhs = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Implies(lid, sort, lhs, rhs)
@@ -252,7 +255,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 lhs = find_inst(p, int(inst[3]))
-                rhs = find_inst(int(inst[4]))
+                rhs = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Iff(lid, sort, lhs, rhs)
@@ -265,7 +268,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Add(lid, sort, op1, op2)
@@ -278,7 +281,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Sub(lid, sort, op1, op2)
@@ -291,7 +294,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Mul(lid, sort, op1, op2)
@@ -304,7 +307,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Sdiv(lid, sort, op1, op2)
@@ -317,7 +320,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Udiv(lid, sort, op1, op2)
@@ -343,7 +346,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Sll(lid, sort, op1, op2)
@@ -356,7 +359,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Srl(lid, sort, op1, op2)
@@ -369,7 +372,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Sra(lid, sort, op1, op2)
@@ -382,7 +385,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = And(lid, sort, op1, op2)
@@ -395,7 +398,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Or(lid, sort, op1, op2)
@@ -408,7 +411,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Xor(lid, sort, op1, op2)
@@ -421,7 +424,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Concat(lid, sort, op1, op2)
@@ -446,7 +449,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Eq(lid, sort, op1, op2)
@@ -459,7 +462,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Neq(lid, sort, op1, op2)
@@ -472,7 +475,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Ugt(lid, sort, op1, op2)
@@ -485,7 +488,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Sgt(lid, sort, op1, op2)
@@ -498,7 +501,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Ugte(lid, sort, op1, op2)
@@ -511,7 +514,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Sgte(lid, sort, op1, op2)
@@ -524,7 +527,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Ult(lid, sort, op1, op2)
@@ -537,7 +540,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Slt(lid, sort, op1, op2)
@@ -550,7 +553,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Ulte(lid, sort, op1, op2)
@@ -563,7 +566,7 @@ def parse(inp: list[str]) -> list[Instruction]:
                 # Find the operands associated to this instruction
                 sort = find_inst(p, int(inst[2]))
                 op1 = find_inst(p, int(inst[3]))
-                op2 = find_inst(int(inst[4]))
+                op2 = find_inst(p, int(inst[4]))
 
                 # Construct instruction
                 op = Slte(lid, sort, op1, op2)
