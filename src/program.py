@@ -317,4 +317,10 @@ class Slte(Instruction):
 class Uext(Instruction):
     def __init__(self, lid: int, sort: Sort, op: Instruction, width: int, name: str):
         super().__init__(lid, "uext", [sort, op, width, name])
+        # Handle btor uexts which are creating name aliases
         self.width: int = width
+        self.renaming = False
+        if self.width == 0:
+            self.renaming = True
+            self.name = name
+            self.aliasid = op.lid
