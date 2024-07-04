@@ -17,7 +17,7 @@
 ##########################################################################
 
 from btoropt.program import *
-from btoropt.parse import *
+from btoropt.parser import *
 import os
 import subprocess
 import sys

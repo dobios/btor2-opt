@@ -18,10 +18,10 @@
 
 # List/register all passes here
 
-from btoropt.passes.genericpass import Pass
-from btoropt.passes.transforms.renameInputs import RenameInputs
-from btoropt.passes.transforms.initAllStates import InitAllStates
-from btoropt.passes.validation.checkLidOrdering import CheckLidOrdering
+from ..passes.genericpass import Pass
+from ..passes.transforms.renameInputs import RenameInputs
+from ..passes.transforms.initAllStates import InitAllStates
+from ..passes.validation.checkLidOrdering import CheckLidOrdering
 
 # Retrieves a pass from the list given an id
 def find_pass(p: list[Pass], id: str) -> Pass:
