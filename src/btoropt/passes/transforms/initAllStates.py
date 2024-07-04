@@ -16,8 +16,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from src.passes.genericpass import Pass
-from src.program import Instruction, State, Init, Constd
+from btoropt.passes.genericpass import Pass
+from btoropt.program import Instruction, State, Init, Constd
 
 # Makes sure that all states are initialized
 class InitAllStates(Pass):
