@@ -19,7 +19,7 @@
 
 import unittest
 
-from btoropt import parse
+from btoropt.parse import *
 
 def parsewrapper (filepath):
     btor2str: list[str] = []
@@ -31,11 +31,13 @@ class BTORTest(unittest.TestCase):
     """Check whether BTOR interface is working properly"""
 
     def test_btor1(self):
-        prgm = parse.parse(parsewrapper("tests/btor/reg_en.btor"))
+        prgm = parse(parsewrapper("tests/btor/reg_en.btor"))
 
         self.assertEqual(prgm[0].inst, "sort")
         self.assertEqual(prgm[1].inst, "input")
         self.assertEqual(len(prgm), 22)
+
+        print("test passed")
 
 
 if __name__ == '__main__':
