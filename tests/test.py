@@ -19,7 +19,7 @@
 
 import unittest
 
-from src.btoropt.parse import *
+from btoropt.parser import *
 
 def parsewrapper (filepath):
     btor2str: list[str] = []

@@ -18,7 +18,7 @@
 
 from btoropt.program import *
 from btoropt.passes.allpasses import *
-from btoropt.parse import *
+from btoropt.parser import *
 import sys
 
 def main():
