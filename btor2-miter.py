@@ -1,22 +1,22 @@
 ##########################################################################
 # BTOR2 parser, code optimizer, and circuit miter
 # Copyright (C) 2024  Amelia Dobis
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from src.program import * 
+from src.program import *
 from src.parse import *
 import os
 import subprocess
@@ -50,24 +50,24 @@ def merge(p1: list[Instruction], p2: list[Instruction]) -> list[Instruction]:
         # Update input lids in operands
         for oper in op.operands:
             if isinstance(oper, Input):
-                if oper.isin(inputs): 
+                if oper.isin(inputs):
                     oper = next(inp for inp in inputs if inp.eq(oper))
     out2 = p2[len(new_p2) - 1]
 
     lec = create_lec_assertion(out1, out2, new_p2[len(new_p2) - 1].lid)
-    
+
     # Remove outputs
     p1.pop()
     new_p2.pop()
-    
+
     return p1 + new_p2 + lec # merge everything
 
 # Given a firrtl design filename, creates a miter circuit from the two outputs of sfc and circt
 def create_miter(fir_filename: str) -> list[Instruction]:
-    
+
     if os.path.exists("tmp.btor2"):
         os.remove("tmp.btor2")
-    
+
     # Run it through the SFC and store the output
     os.system(f"firrtl --compiler sverilog -E btor2 -i {fir_filename} -o tmp.btor2")
     sfc_p = ""
@@ -75,7 +75,7 @@ def create_miter(fir_filename: str) -> list[Instruction]:
         sfc_p = file.read()
 
     # Run the FIRRTL design through firtool
-    circt_p = subprocess.run(f"firtool --btor2 {fir_filename}", stdout=subprocess.PIPE).stdout.decode('utf-8') 
+    circt_p = subprocess.run(f"firtool --btor2 {fir_filename}", stdout=subprocess.PIPE).stdout.decode('utf-8')
 
     # Parse both files
     p1 = parse(sfc_p)

@@ -16,20 +16,16 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
+# List/register all passes here
+
 from src.passes.genericpass import Pass
-from src.program import Instruction
+from src.passes.transforms.renameInputs import RenameInputs
+from src.passes.transforms.initAllStates import InitAllStates
+from src.passes.validation.checkLidOrdering import CheckLidOrdering
 
-# Rewrites all lids to be in instruction order
-class CheckLidOrdering(Pass):
-    def __init__(self):
-        super().__init__("check-lid-ordering")
+# Retrieves a pass from the list given an id
+def find_pass(p: list[Pass], id: str) -> Pass:
+    return next((e for e in p if e.id == id), None)
 
-    def run(p: list[Instruction]) -> list[Instruction]:
-        res = []
-
-        for i in range(len(p)):
-            inst = p[i]
-            inst.lid = i
-            res.append(inst)
-
-        return res
+# List containing all passes
+all_passes = [RenameInputs(), InitAllStates(), CheckLidOrdering()]

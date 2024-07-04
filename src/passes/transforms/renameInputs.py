@@ -1,36 +1,26 @@
 ##########################################################################
 # BTOR2 parser, code optimizer, and circuit miter
 # Copyright (C) 2024  Amelia Dobis
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from program import *
-from program import Instruction
-from passes.transforms.initAllStates import *
-from passes.validation.checkLidOrdering import *
-
-# Base clas for compiler pass
-# @param id: the unique name of this pass
-class Pass:
-    def __init__(self, id: str):
-        self.id = id
-
-    def run(p: list[Instruction]) -> list[Instruction]:
-        return p
-
 # Example pass: Simply renames all inputs to inp_<pos>
+
+from src.passes.genericpass import Pass
+from src.program import Instruction, Input
+
 class RenameInputs(Pass):
     def __init__(self):
         super().__init__("rename-inputs")
@@ -47,10 +37,3 @@ class RenameInputs(Pass):
             else:
                 res.append(inst)
         return res
-
-# Retrieves a pass from the list given an id
-def find_pass(p: list[Pass], id: str) -> Pass:
-    return next((e for e in p if e.id == id), None)
-
-# List containing all passes
-all_passes = [RenameInputs(), InitAllStates(), CheckLidOrdering()]

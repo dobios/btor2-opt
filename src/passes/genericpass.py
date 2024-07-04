@@ -16,20 +16,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from src.passes.genericpass import Pass
+# Abstract class for a compiler pass
+
 from src.program import Instruction
 
-# Rewrites all lids to be in instruction order
-class CheckLidOrdering(Pass):
-    def __init__(self):
-        super().__init__("check-lid-ordering")
+# Base clas for compiler pass
+# @param id: the unique name of this pass
+class Pass:
+    def __init__(self, id: str):
+        self.id = id
 
     def run(p: list[Instruction]) -> list[Instruction]:
-        res = []
-
-        for i in range(len(p)):
-            inst = p[i]
-            inst.lid = i
-            res.append(inst)
-
-        return res
+        return p
