@@ -18,8 +18,8 @@
 
 # Example pass: Simply renames all inputs to inp_<pos>
 
-from btoropt.passes.genericpass import Pass
-from btoropt.program import Instruction, Input
+from src.btoropt.passes.genericpass import Pass
+from src.btoropt.program import Instruction, Input
 
 class RenameInputs(Pass):
     def __init__(self):

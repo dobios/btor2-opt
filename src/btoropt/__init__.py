@@ -16,9 +16,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from btoropt.program import *
-from btoropt.parser import *
-from btoropt.passes.genericpass import *
+from .program import *
+from .parser import *
+from .passes.genericpass import *
 
 # Version of btoropt package
 __version__ = "0.1"

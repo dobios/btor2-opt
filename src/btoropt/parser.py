@@ -16,7 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from btoropt.program import *
+from .program import *
 
 def find_inst(p: list[Instruction], id: int) -> Instruction:
     inst = get_inst(p, id)

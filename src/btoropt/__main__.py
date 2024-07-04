@@ -16,9 +16,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from btoropt.program import *
-from btoropt.passes.allpasses import *
-from btoropt.parser import *
+from .program import *
+from .passes.allpasses import *
+from .parser import *
 import sys
 
 def main():
