@@ -1,3 +1,4 @@
+
 ##########################################################################
 # BTOR2 parser, code optimizer, and circuit miter
 # Copyright (C) 2024  Amelia Dobis
@@ -16,20 +17,26 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from src.passes.genericpass import Pass
-from src.program import Instruction
+import unittest
 
-# Rewrites all lids to be in instruction order
-class CheckLidOrdering(Pass):
-    def __init__(self):
-        super().__init__("check-lid-ordering")
+from src import parse
 
-    def run(p: list[Instruction]) -> list[Instruction]:
-        res = []
+def parsewrapper (filepath):
+    btor2str: list[str] = []
+    with open(filepath, "r") as f:
+        btor2str = f.readlines()
+    return btor2str
 
-        for i in range(len(p)):
-            inst = p[i]
-            inst.lid = i
-            res.append(inst)
+class BTORTest(unittest.TestCase):
+    """Check whether BTOR interface is working properly"""
 
-        return res
+    def test_btor1(self):
+        prgm = parse.parse(parsewrapper("tests/btor/reg_en.btor"))
+
+        self.assertEqual(prgm[0].inst, "sort")
+        self.assertEqual(prgm[1].inst, "input")
+        self.assertEqual(len(prgm), 22)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -1,17 +1,17 @@
 ##########################################################################
 # BTOR2 parser, code optimizer, and circuit miter
 # Copyright (C) 2024  Amelia Dobis
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
@@ -21,11 +21,11 @@ from functools import reduce
 # All supported btor2 instruction tags
 tags = ["sort","input", "output", "bad", "constraint", "zero",
         "one", "ones", "constd", "consth", "const", "state",
-        "init", "next", "slice", "ite", "implies", "iff", 
-        "add", "sub", "mul", "sdiv", "udiv", "smod", "sll", 
+        "init", "next", "slice", "ite", "implies", "iff",
+        "add", "sub", "mul", "sdiv", "udiv", "smod", "sll",
         "srl", "sra", "and", "or", "xor", "concat", "not",
         "eq", "neq", "ugt", "sgt", "ugte", "sgte", "ult",
-        "slt", "ulte", "slte", "uext"]
+        "slt", "ulte", "slte", "uext", "sext"]
 
 # All legal sort types
 sort_tags = ["bitvector", "bitvec", "array"]
@@ -40,7 +40,7 @@ class Instruction:
         self.lid = lid
         self.inst = inst
         self.operands = operands
-        
+
     def move_up(self, amount: int):
         self.lid += amount
 
@@ -60,10 +60,12 @@ class Instruction:
         return False
 
     def serialize(self) -> str:
+        assert all([isinstance(op, Instruction) or isinstance(op, int) for op in self.operands]), \
+            "Operands must be instructions or integers, fails for operands: %d." % self.operands
         return str(self.lid) + " " + self.inst + " " + \
             ' '.join([(str(op.lid) if isinstance(op, Instruction) else str(op)) + " " \
                       for op in self.operands ])
-    
+
 def serialize_p(p: list[Instruction]) -> str:
     return reduce(lambda acc, s: acc + s.serialize() + "\n", p, "")
 
@@ -85,7 +87,7 @@ class Sort(Instruction):
 
     def eq(self, inst) -> bool:
         return super().eq(inst) and self.typ == inst.typ and self.width == inst.width
-    
+
     def serialize(self) -> str:
         return super().serialize() + self.typ + " " + str(self.width)
 
@@ -97,15 +99,15 @@ class Input(Instruction):
         super().__init__(lid, "input", [sort])
         self.name = name
         self.sid = sort.lid
-    
+
     def eq(self, inst) -> bool:
         return super().eq(inst) and self.name == inst.name
-    
+
     def serialize(self) -> str:
         return super().serialize() + self.name
-    
+
 ## Unary Instructions ##
-    
+
 class Output(Instruction):
     def __init__(self, lid: int, out: Instruction):
         super().__init__(lid, "output", [out])
@@ -137,7 +139,7 @@ class Not(Instruction):
         super().__init__(lid, "not", [sort, cond])
 
 ## Constants: always of the form Instruction + sort + value ##
-    
+
 class Constd(Instruction):
     def __init__(self, lid: int, sort: Sort, value: int):
         super().__init__(lid, "constd", [sort])
@@ -146,10 +148,10 @@ class Constd(Instruction):
 
     def eq(self, inst) -> bool:
         return super().eq(inst) and self.value == inst.value
-    
+
     def serialize(self) -> str:
         return super().serialize() + str(self.value)
-    
+
 class Consth(Instruction):
     def __init__(self, lid: int, sort: Sort, value: int):
         super().__init__(lid, "consth", [sort])
@@ -158,10 +160,10 @@ class Consth(Instruction):
 
     def eq(self, inst) -> bool:
         return super().eq(inst) and self.value == inst.value
-    
+
     def serialize(self) -> str:
         return super().serialize() + str(self.value)
-    
+
 class Const(Instruction):
     def __init__(self, lid: int, sort: Sort, value: int):
         super().__init__(lid, "const", [sort])
@@ -170,10 +172,10 @@ class Const(Instruction):
 
     def eq(self, inst) -> bool:
         return super().eq(inst) and self.value == inst.value
-    
+
     def serialize(self) -> str:
         return super().serialize() + str(self.value)
-    
+
 ## State related instructions ##
 # States are declared using a sort and a name
 class State(Instruction):
@@ -184,10 +186,10 @@ class State(Instruction):
 
     def eq(self, inst) -> bool:
         return super().eq(inst) and self.name == inst.name
-    
+
     def serialize(self) -> str:
         return super().serialize() + self.name
-    
+
 class Init(Instruction):
     def __init__(self, lid: int, sort: Sort, state: Instruction, constval: Instruction):
         super().__init__(lid, "init", [sort, state, constval])
@@ -205,10 +207,10 @@ class Slice(Instruction):
 
     def eq(self, inst) -> bool:
         return super().eq(inst) and self.width == inst.width and self.lowbit == inst.lowbit
-    
+
     def serialize(self) -> str:
         return super().serialize() + str(self.width) + " " + str(self.lowbit)
-    
+
 class Ite(Instruction):
     def __init__(self, lid: int, sort: Sort, cond: Instruction, t: Instruction, f: Instruction):
         super().__init__(lid, "ite", [sort, cond, t, f])
@@ -280,7 +282,7 @@ class Eq(Instruction):
 
 class Neq(Instruction):
     def __init__(self, lid: int, sort: Sort, op1: Instruction, op2: Instruction):
-        super().__init__(lid, "neq", [sort, op1, op2])   
+        super().__init__(lid, "neq", [sort, op1, op2])
 
 class Ugt(Instruction):
     def __init__(self, lid: int, sort: Sort, op1: Instruction, op2: Instruction):
@@ -289,7 +291,7 @@ class Ugt(Instruction):
 class Sgt(Instruction):
     def __init__(self, lid: int, sort: Sort, op1: Instruction, op2: Instruction):
         super().__init__(lid, "sgt", [sort, op1, op2])
-    
+
 class Ugte(Instruction):
     def __init__(self, lid: int, sort: Sort, op1: Instruction, op2: Instruction):
         super().__init__(lid, "ugte", [sort, op1, op2])
@@ -317,10 +319,14 @@ class Slte(Instruction):
 class Uext(Instruction):
     def __init__(self, lid: int, sort: Sort, op: Instruction, width: int, name: str):
         super().__init__(lid, "uext", [sort, op, width, name])
-        # Handle btor uexts which are creating name aliases
         self.width: int = width
         self.renaming = False
         if self.width == 0:
             self.renaming = True
             self.name = name
             self.aliasid = op.lid
+
+class Sext(Instruction):
+    def __init__(self, lid: int, sort: Sort, op: Instruction, width: int, name: str):
+        super().__init__(lid, "sext", [sort, op, width, name])
+        self.width: int = width

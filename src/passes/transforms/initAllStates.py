@@ -1,23 +1,23 @@
 ##########################################################################
 # BTOR2 parser, code optimizer, and circuit miter
 # Copyright (C) 2024  Amelia Dobis
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from src.passes.passes import Pass
-from src.program import *
+from src.passes.genericpass import Pass
+from src.program import Instruction, State, Init, Constd
 
 # Makes sure that all states are initialized
 class InitAllStates(Pass):
@@ -30,7 +30,7 @@ class InitAllStates(Pass):
         states: list[Instruction] = [s for s in p if isinstance(s, State)]
 
         # Create def-use pairs for states + initializations
-        state_inits = [(s, 
+        state_inits = [(s,
             next((op for op in p if (s.isin(op.operands) and isinstance(op, Init))), None)
         ) for s in states]
 
@@ -64,4 +64,3 @@ class InitAllStates(Pass):
                 lid += 1
                 res.append(inst)
         return res
-    
