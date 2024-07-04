@@ -1,6 +1,11 @@
 # btor2-opt
 Very basic btor2 parser, circuit miter, and code optimizer.
 
+## Install  
+```
+pip install btor2-opt
+```
+
 ## Overview
 This repo contains two main scripts:
   - `btor2-opt`: Takes a `.btor2` file and a list of pass names as argument and prints out the transformed result.

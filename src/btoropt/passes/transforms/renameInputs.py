@@ -16,16 +16,24 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-# List/register all passes here
+# Example pass: Simply renames all inputs to inp_<pos>
 
-from src.passes.genericpass import Pass
-from src.passes.transforms.renameInputs import RenameInputs
-from src.passes.transforms.initAllStates import InitAllStates
-from src.passes.validation.checkLidOrdering import CheckLidOrdering
+from btoropt.passes.genericpass import Pass
+from btoropt.program import Instruction, Input
 
-# Retrieves a pass from the list given an id
-def find_pass(p: list[Pass], id: str) -> Pass:
-    return next((e for e in p if e.id == id), None)
+class RenameInputs(Pass):
+    def __init__(self):
+        super().__init__("rename-inputs")
 
-# List containing all passes
-all_passes = [RenameInputs(), InitAllStates(), CheckLidOrdering()]
+    # I chose to have this pass not modify p in place
+    # you can also simply modify p and return it
+    def run(p: list[Instruction]) -> list[Instruction]:
+        i = 0
+        res = []
+        for inst in p:
+            if isinstance(inst, Input):
+                res.append(Input(inst.lid, inst.sort, f"inp_{i}"))
+                i += 1
+            else:
+                res.append(inst)
+        return res

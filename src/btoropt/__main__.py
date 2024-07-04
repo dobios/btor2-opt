@@ -16,12 +16,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from src.program import *
-from src.passes.allpasses import *
-from src.parse import *
+from btoropt.program import *
+from btoropt.passes.allpasses import *
+from btoropt.parse import *
 import sys
 
-if __name__ == "__main__":
+def main():
     # Retrieve flags
     if len(sys.argv) < 3:
         print("Usage: python3 btor2-opt.py <file.btor2> <pass_names_in_order> ...")
@@ -50,3 +50,6 @@ if __name__ == "__main__":
 
     # Show the result to the user
     print(serialize_p(btor2))
+
+if __name__ == "__main__":
+    main()

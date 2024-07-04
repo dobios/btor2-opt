@@ -16,20 +16,9 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from src.passes.genericpass import Pass
-from src.program import Instruction
+from btoropt import program
+from btoropt.parse import parse
+from btoropt.passes.genericpass import Pass
 
-# Rewrites all lids to be in instruction order
-class CheckLidOrdering(Pass):
-    def __init__(self):
-        super().__init__("check-lid-ordering")
-
-    def run(p: list[Instruction]) -> list[Instruction]:
-        res = []
-
-        for i in range(len(p)):
-            inst = p[i]
-            inst.lid = i
-            res.append(inst)
-
-        return res
+# Version of btoropt package
+__version__ = "0.1"

@@ -16,15 +16,20 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-# Abstract class for a compiler pass
+from btoropt.passes.genericpass import Pass
+from btoropt.program import Instruction
 
-from src.program import Instruction
-
-# Base clas for compiler pass
-# @param id: the unique name of this pass
-class Pass:
-    def __init__(self, id: str):
-        self.id = id
+# Rewrites all lids to be in instruction order
+class CheckLidOrdering(Pass):
+    def __init__(self):
+        super().__init__("check-lid-ordering")
 
     def run(p: list[Instruction]) -> list[Instruction]:
-        return p
+        res = []
+
+        for i in range(len(p)):
+            inst = p[i]
+            inst.lid = i
+            res.append(inst)
+
+        return res

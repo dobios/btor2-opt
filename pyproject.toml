@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "btor2-opt"
+version = "0.1.0"
+description = "Very basic btor2 parser, circuit miter, and code optimizer."
+readme = "README.md"
+authors = [{ name = "Amelia Dobis", email = "ad4048@princeton.edu" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["btor2", "parser", "compiler"]
+requires-python = ">=3.10"
+
+    [project.scripts]
+    btoropt = "btoropt.__main__:main"
+    btormiter = "src.btormiter:main"
+
+    [project.urls]
+    repository = "https://github.com/dobios/btoropt"
+
+    [project.optional-dependencies]
+    dev = ["black", "bumpver", "isort", "pip-tools"]
+
+
+[tool.bumpver]
+current_version = "0.1.0"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message  = "bump version {old_version} -> {new_version}"
+commit          = true
+tag             = true
+push            = false
+
+    [tool.bumpver.file_patterns]
+    "pyproject.toml" = [
+        'current_version = "{version}"',
+        'version = "{version}"',
+    ]
+    "src/btoropt/__init__.py" = ["{version}"]
+
+[tool.isort]
+profile                   = "black"
+import_heading_stdlib     = "Standard library imports"
+import_heading_thirdparty = "Third party imports"
+import_heading_firstparty = "Reader imports"

@@ -16,8 +16,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from src.program import *
-from src.parse import *
+from btoropt.program import *
+from btoropt.parse import *
 import os
 import subprocess
 import sys
@@ -84,9 +84,12 @@ def create_miter(fir_filename: str) -> list[Instruction]:
     # Create the miter circt
     return merge(p1, p2)
 
-if __name__ == "__main__":
+def main():
     if len(sys.argv) < 2:
         print("Usage: python3 btor-miter.py <fir_design.fir>")
 
     p = create_miter(sys.argv[1])
     print(serialize_p(p))
+
+if __name__ == "__main__":
+    main()

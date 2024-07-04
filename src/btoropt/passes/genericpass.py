@@ -1,4 +1,3 @@
-
 ##########################################################################
 # BTOR2 parser, code optimizer, and circuit miter
 # Copyright (C) 2024  Amelia Dobis
@@ -17,26 +16,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-import unittest
+# Abstract class for a compiler pass
 
-from btoropt import parse
+from btoropt.program import Instruction
 
-def parsewrapper (filepath):
-    btor2str: list[str] = []
-    with open(filepath, "r") as f:
-        btor2str = f.readlines()
-    return btor2str
+# Base clas for compiler pass
+# @param id: the unique name of this pass
+class Pass:
+    def __init__(self, id: str):
+        self.id = id
 
-class BTORTest(unittest.TestCase):
-    """Check whether BTOR interface is working properly"""
-
-    def test_btor1(self):
-        prgm = parse.parse(parsewrapper("tests/btor/reg_en.btor"))
-
-        self.assertEqual(prgm[0].inst, "sort")
-        self.assertEqual(prgm[1].inst, "input")
-        self.assertEqual(len(prgm), 22)
-
-
-if __name__ == '__main__':
-    unittest.main()
+    def run(p: list[Instruction]) -> list[Instruction]:
+        return p
