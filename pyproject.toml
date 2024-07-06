@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "btor2-opt"
-version = "0.1.2"
+version = "0.1.3"
 description = "Very basic btor2 parser, circuit miter, and code optimizer."
 readme = "README.md"
 authors = [{ name = "Amelia Dobis", email = "ad4048@princeton.edu" }]
@@ -29,7 +29,7 @@ requires-python = ">=3.10"
 
 
 [tool.bumpver]
-current_version = "0.1.2"
+current_version = "0.1.3"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message  = "bump version {old_version} -> {new_version}"
 commit          = true

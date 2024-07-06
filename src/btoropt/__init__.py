@@ -21,4 +21,4 @@ from .parser import *
 from .passes.genericpass import *
 
 # Version of btoropt package
-__version__ = "0.1.2"
+__version__ = "0.1.3"
