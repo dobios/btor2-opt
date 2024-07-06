@@ -79,5 +79,5 @@ all_passes = [RenameInputs()]
 ```
 This pass can then be called by running:
 ```sh
-python3 btor2-opt.py ex.btor2 rename-inputs
+btoropt ex.btor2 rename-inputs
 ```
