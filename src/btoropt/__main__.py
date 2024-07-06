@@ -24,7 +24,7 @@ import sys
 def main():
     # Retrieve flags
     if len(sys.argv) < 3:
-        print("Usage: python3 btor2-opt.py <file.btor2> <pass_names_in_order> ...")
+        print("Usage: btoropt <file.btor2> <pass_names_in_order> ...")
         exit(1)
 
     # Retrieve design
