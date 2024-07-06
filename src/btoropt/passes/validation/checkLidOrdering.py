@@ -16,8 +16,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from src.btoropt.passes.genericpass import Pass
-from src.btoropt.program import Instruction
+from ...passes.genericpass import Pass
+from ...program import Instruction
 
 # Rewrites all lids to be in instruction order
 class CheckLidOrdering(Pass):

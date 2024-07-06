@@ -18,7 +18,7 @@
 
 # Abstract class for a compiler pass
 
-from src.btoropt.program import Instruction
+from ..program import Instruction
 
 # Base clas for compiler pass
 # @param id: the unique name of this pass
