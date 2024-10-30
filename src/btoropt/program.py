@@ -25,11 +25,14 @@ tags = ["sort","input", "output", "bad", "constraint", "zero",
         "add", "sub", "mul", "sdiv", "udiv", "smod", "sll",
         "srl", "sra", "and", "or", "xor", "concat", "not",
         "eq", "neq", "ugt", "sgt", "ugte", "sgte", "ult",
-        "slt", "ulte", "slte", "uext", "sext", "inst", 
-        "prec", "post", "set"]
+        "slt", "ulte", "slte", "uext", "sext"]
 
 # All legal sort types
 sort_tags = ["bitvector", "bitvec", "array"]
+
+# All custom tags
+custom_tags = ["inst", "set", "ref", "prec", "post"]
+structure_tags = ["module", "contract"]
 
 # Base class for an instruction
 # @param lid: the line identifier of the instruction
