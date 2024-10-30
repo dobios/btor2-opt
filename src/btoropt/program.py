@@ -35,11 +35,15 @@ sort_tags = ["bitvector", "bitvec", "array"]
 # @param inst: the string litteral keyword for the instruction
 # @param operands: the list of operands given to this instruction,
 # these must also be instructions
+# @param is_standard: whether or not the instruction is part of the btor2
+#   True: instruction is part of the btor2 spec
+#   False: instruction is a custom extension for btor-opt
 class Instruction:
-    def __init__(self, lid: int, inst: str, operands = []):
+    def __init__(self, lid: int, inst: str, operands = [], is_standard=True):
         self.lid = lid
         self.inst = inst
         self.operands = operands
+        self.is_standard = is_standard
 
     def move_up(self, amount: int):
         self.lid += amount
@@ -106,11 +110,12 @@ class Input(Instruction):
     def serialize(self) -> str:
         return super().serialize() + self.name
 
-## Unary Instructions ##
 
 class Output(Instruction):
     def __init__(self, lid: int, out: Instruction):
         super().__init__(lid, "output", [out])
+
+## Unary Instructions ##
 
 class Bad(Instruction):
     def __init__(self, lid: int, cond: Instruction):
@@ -330,3 +335,93 @@ class Sext(Instruction):
     def __init__(self, lid: int, sort: Sort, op: Instruction, width: int, name: str):
         super().__init__(lid, "sext", [sort, op, width, name])
         self.width: int = width
+
+
+############ NON-STANDARD: Custom extensions for btor-opt ############
+
+# Precondition instruction
+# This becomes a "x not cond; bad x" when verifying an instance
+#      becomes a "constraint cond" when verifying a module
+class Prec(Instruction):
+    def __init__(self, lid: int, cond: Instruction):
+        super().__init__(lid, "prec", [cond], False)
+
+# Postcondition instruction
+# This becomes a "constraint cond" when verifying an instance
+#      becomes a "x not cond; bad x" when verifying a module
+class Post(Instruction):
+    def __init__(self, lid: int, cond: Instruction):
+        super().__init__(lid, "post", [cond], False)
+
+# Set Instruction
+# Similarly to an alias, this sets the inputs of an instance to a specific operation
+# @param instance: the instance this is setting inputs for
+# @param inp: a reference to the module's input we want to set, e.g. A:2
+# @param alias: the instruction we want to set the input to
+class Set(Instruction):
+    def __init__(self, lid: int, instance: Instruction, inp: Instruction, alias: Instruction):
+        super().__init__(lid, "set", [instance, inp, alias], False)
+
+# Structural extensions
+class ModuleLike():
+    def __init__(self, name: str, body: list[Instruction]) -> None:
+        self.name = name
+        self.body = body
+
+    def get_inst(self, i: int) -> Instruction:
+        return self.body[i]
+
+# Module instruction 
+# Declares a named region of standard instructions
+# Can be referred to by name and associated with a contract
+class Module(ModuleLike):
+    def __init__(self, name: str, body: list[Instruction]) -> None:
+        super().__init__(name, body)
+   
+# Contract instruction 
+# Declares a named region of custom instructions
+# Only preconditions and postconditions are allowed
+# Name must be an existing module name 
+class Contract(ModuleLike):
+    def __init__(self, name: str, precondtions: list[Instruction], postconditions: list[Instruction]) -> None:
+        super().__init__(name, precondtions + postconditions)
+        self.preconditions = precondtions
+        self.preconditions = postconditions
+        assert len(precondtions) > 0 or len(postconditions) > 0, \
+            "Contracts must contain either a precondition or a post-condition!"
+
+# Base class for a custom btor2 file (standard is simply a list of instructions)
+class Program():
+    def __init__(self, modules: list[Module], contracts: list[Contract]) -> None:
+        self.modules = modules
+        # Ignore all contracts that don't have an existing name
+        self.contracts = contracts
+        ## Sanity check: We should have as many modules as there are contracts
+        assert len(modules) >= len(contracts), \
+            "There should be at least as many modules as there are contracts!"
+        ## Sanity check: Each module should have at most one contract
+        for m in modules:
+            cs = [c for c in contracts if c.name == m.name]
+            assert len(cs) <= 1, f"Module {m.name} has more than one contract!"
+        ## Sanity check: Each contract should name a module exactly once
+        for c in contracts:
+            ms = [m for m in modules if c.name == m.name]
+            assert len(ms) == 1, f"Contract {c.name} references {str(len(ms))} modules instead of 1!"
+    
+    # Retrieves a module by its given name
+    # @param name: the name of the module we want to retrive
+    def get_module(self, name: str) -> Module:
+        res = [x for x in self.modules if x.name == name]
+        ## Check if the given name is defined
+        assert len(res) > 0 , f"name: {name} is not defined!"
+        return res[0]
+    
+    # Retrieves a contract by its given name
+    # @param name: the name of the contract we want to retrive
+    def get_contract(self, name: str) -> Contract:
+        res = [x for x in self.contracts if x.name == name]
+        ## Check if the given name is defined
+        assert len(res) > 0 , f"name: {name} is not defined!"
+        return res[0]
+
+########################################################################

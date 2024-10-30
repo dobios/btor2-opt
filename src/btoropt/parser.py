@@ -23,6 +23,18 @@ def find_inst(p: list[Instruction], id: int) -> Instruction:
     assert inst is not None, f"Undeclared instruction used with id: {id}"
     return inst
 
+def parse_file(inp: list[str]) -> Program:
+    ## TODO: Parse an entire file that can contain contracts and modules
+    return None
+
+def parse_module(inp: list[str]) -> Module:
+    ## TODO: Parse a module and its body
+    return None
+
+def parse_contract(inp: list[str]) -> Contract:
+    ## TODO: Parse a contract
+    return None
+
 def parse(inp: list[str]) -> list[Instruction]:
     # Split the string into instructions and read them 1 by 1
     p = []
