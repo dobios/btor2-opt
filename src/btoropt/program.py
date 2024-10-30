@@ -25,7 +25,8 @@ tags = ["sort","input", "output", "bad", "constraint", "zero",
         "add", "sub", "mul", "sdiv", "udiv", "smod", "sll",
         "srl", "sra", "and", "or", "xor", "concat", "not",
         "eq", "neq", "ugt", "sgt", "ugte", "sgte", "ult",
-        "slt", "ulte", "slte", "uext", "sext"]
+        "slt", "ulte", "slte", "uext", "sext", "inst", 
+        "prec", "post", "set"]
 
 # All legal sort types
 sort_tags = ["bitvector", "bitvec", "array"]
@@ -353,14 +354,32 @@ class Post(Instruction):
     def __init__(self, lid: int, cond: Instruction):
         super().__init__(lid, "post", [cond], False)
 
+# Instance Instruction
+# Creates an instance of a named module
+# @param name: the name of the module to instantiate
+class Instance(Instruction):
+    def __init__(self, lid: int, name: str):
+        super().__init__(lid, "inst", [], False)
+        self.name = name
+
+# Reference to an instruction in a different named region
+# Has a weird infix notation `<mod_name>:<lid>`
+# Not really an instruction, more of a reference to an instruction
+class Ref(Instruction):
+    def __init__(self, lid: int, name: str, val: Instruction):
+        super().__init__(lid, ":", [val], False)
+        self.name = name
+        self.val = val
+
 # Set Instruction
 # Similarly to an alias, this sets the inputs of an instance to a specific operation
 # @param instance: the instance this is setting inputs for
-# @param inp: a reference to the module's input we want to set, e.g. A:2
+# @param ref: a reference to the module's input we want to set, e.g. A:2
 # @param alias: the instruction we want to set the input to
 class Set(Instruction):
-    def __init__(self, lid: int, instance: Instruction, inp: Instruction, alias: Instruction):
-        super().__init__(lid, "set", [instance, inp, alias], False)
+    def __init__(self, lid: int, instance: Instance, ref: Ref, alias: Instruction):
+        super().__init__(lid, "set", [instance, ref, alias], False)
+
 
 # Structural extensions
 class ModuleLike():
@@ -389,6 +408,7 @@ class Contract(ModuleLike):
         self.preconditions = postconditions
         assert len(precondtions) > 0 or len(postconditions) > 0, \
             "Contracts must contain either a precondition or a post-condition!"
+        
 
 # Base class for a custom btor2 file (standard is simply a list of instructions)
 class Program():
