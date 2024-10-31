@@ -21,22 +21,42 @@ from .passes.allpasses import *
 from .parser import *
 import sys
 
+options = ["modular"]
+
 def main():
     # Retrieve flags
     if len(sys.argv) < 3:
-        print("Usage: btoropt <file.btor2> <pass_names_in_order> ...")
+        print("Usage: btoropt [optional](--modular) <file.btor2> <pass_names_in_order> ...")
         exit(1)
+
+    # Check options
+    base = 1
+    modular = False
+    if "--" in sys.argv[1].strip():
+        option = sys.argv[1].strip().strip("--")
+        if option not in options:
+            print(f"Invalid option given: {option}")
+            exit(1)
+        modular = True
+        base += 1
+        
 
     # Retrieve design
     btor2str: list[str] = []
-    with open(sys.argv[1], "r") as f:
+    with open(sys.argv[base], "r") as f:
         btor2str = f.readlines()
 
     # Parse the design
-    btor2: list[Instruction] = parse(btor2str)
+    btor2 = None
+    if modular:
+        btor2 = parse_file(btor2str)
+    else:
+        btor2 = parse(btor2str)
+    
+    assert btor2 is not None
 
     # Check that the given pass names are valid
-    for name in sys.argv[1:]:
+    for name in sys.argv[base:]:
         if find_pass(all_passes, name) is None:
             print(f"Invalid pass given as argument: {name}")
             exit(1)
@@ -46,10 +66,16 @@ def main():
 
     # Run all passes in the pipeline
     for p in pipeline:
-        btor2 = p.run(btor2)
+        if modular: 
+            btor2 = p.runOnProgram(btor2)
+        else:
+            btor2 = p.run(btor2)
 
     # Show the result to the user
-    print(serialize_p(btor2))
+    if(modular):
+        print(serialize_p(btor2))
+    else:
+        print("Success")
 
 if __name__ == "__main__":
     main()
