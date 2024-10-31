@@ -102,7 +102,7 @@ Module bodies support all standard btor2 along with the following custom instruc
 
 | **Module Instructions** | **Description** |
 |:---|:---|
-| `<lid> ref <module_name> <lid_in_module>` | Refernces an instruction from another module |
+| `<lid> ref <module_name> <lid_in_module>` | References an instruction from another module |
 | `<lid> inst <module_name>` | Creates an instance of a module |
 | `<lid> set <instance_lid> <ref_lid> <local_lid>` | Sets an instance reference to a local instruction |
 
@@ -110,7 +110,7 @@ Contract bodies support all standard btor2 along with the following custom instr
 
 | **Contract Instructions** | **Description** |
 |:---|:---|
-| `<lid> ref <module_name> <lid_in_module>` | Refernces an instruction from the contract's module |
+| `<lid> ref <module_name> <lid_in_module>` | References an instruction from the contract's module |
 | `<lid> prec <cond_lid>` | Declares a precondition |
 | `<lid> post <cond_lid>` | Declares a postcondition |
 
