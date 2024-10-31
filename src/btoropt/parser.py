@@ -18,14 +18,19 @@
 
 from .program import *
 
+# Retrieves an instruction with the given ID from the given standard program
+# This is a safe wrapper around `get_inst` and enforces that the given 
+# ID must be correct.
 def find_inst(p: list[Instruction], id: int) -> Instruction:
     inst = get_inst(p, id)
     assert inst is not None, f"Undeclared instruction used with id: {id}"
     return inst
 
+# Checks thaa a given module name has been defined
 def check_name(name: str, modules: list[Module]) -> bool:
     return name in [m.name for m in modules]
 
+# Retrives a module by name from a list of parsed modules
 def get_module(name: str, modules: list[Module]) -> Module:
     return [m for m in modules if m.name == name][0]
 
@@ -35,17 +40,33 @@ def scan_body(inp: list[str], i: int) -> tuple[list[str], int]:
     res = []
     l = inp[i].split(" ")
     ## Check that the declaration line ends with an '{'
-    assert l[len(l)-1] == "{", "input must be a body start \'{\'"
+    assert str(l[len(l)-1].strip()) == '{', f"invalid body start: {l[len(l)-1]}"
+
     i += 1
     while inp[i].strip() != "}":
         # Check that there are no nested structures
-        assert inp[i].split(" ")[0].isnumeric(), "All body lines must be instructions!"
-        res.append(inp(i))
+        lid = inp[i].strip().split(" ")[0]
+        assert lid.isnumeric(), f"All body lines must be instructions! Found: {lid}"
+        res.append(inp[i].strip())
         i += 1
     return (res, i)
 
+# Parses a ref instruction (only custom inst that is allowed in both modules and contracts)
+# @param inst: the pre-split ref instruction to be parsed 
+# @param modules: the list of already parsed modules that can be referenced
+def parse_ref(inst: list[str], modules: list[Module]) -> Ref:
+    ## Sanity check: Must be a ref instruction
+    assert inst[1] == "ref", f"`parse_ref` can only handle ref instructions, not {inst[1]}!"
+    ref_mod = inst[2]
+
+    ## Sanity check: check that the name exists
+    assert check_name(ref_mod, modules), f"Named module {ref_mod} is undefined!"
+
+    module = get_module(ref_mod, modules)
+    val = find_inst(module.body, int(inst[3]))
+    return Ref(int(inst[0]), ref_mod, val)
+
 # Parse a module's pre-scanned body
-# @param name: the name given to the module
 # @param body: the list of instructions contained within the body
 # @param modules: the list of already parsed modules that can be referenced
 def parse_module_body(body: list[str], modules: list[Module]) -> list[Instruction]:
@@ -65,16 +86,11 @@ def parse_module_body(body: list[str], modules: list[Module]) -> list[Instructio
                 p.append(Instance(lid, instd_mod))
 
             case "ref":
-                ref_mod = inst[2]
-                ## Sanity check: check that the name exists
-                assert check_name(ref_mod, modules), f"Named module {ref_mod} is undefined!"
-                module = get_module(ref_mod, modules)
-                val = find_inst(module.body, int(inst[3]))
-                p.append(Ref(lid, ref_mod, val))
+                p.append(parse_ref(inst, modules))
 
             case "set":
-                instance = Instance(find_inst(p, int(inst[2])))
-                ref = Ref(find_inst(p, int(inst[3])))
+                instance = find_inst(p, int(inst[2]))
+                ref = find_inst(p, int(inst[3]))
                 assert ref.name == instance.name, "`set` can only set a reference to an instance input!"
                 alias = find_inst(p, int(inst[4]))
                 p.append(Set(lid, instance, ref, alias))
@@ -91,9 +107,36 @@ def parse_module_body(body: list[str], modules: list[Module]) -> list[Instructio
 # @param name: the name given to the module
 # @param body: the list of instructions contained within the body
 # @param modules: the list of already parsed modules that can be referenced
-def parse_contract_body(name: str, inp: list[str]) -> tuple[list[Instruction], list[Instruction]]:
-    ## TODO: Parse a contract
-    return None
+def parse_contract_body(body: list[str], modules: list[Module]) -> list[Instruction]:
+    p = []
+    for line in body:
+        inst = line.split(" ")
+        if inst[0] == ";": # handle comments
+            continue
+        lid = int(inst[0])
+        tag = inst[1]
+        match tag:
+            # Handle special instructions
+            case "prec":
+                # Find the op associated to this instruction
+                cond = find_inst(p, int(inst[2]))
+                p.append(Prec(lid, cond))
+
+            case "post":
+                # Find the op associated to this instruction
+                cond = find_inst(p, int(inst[2]))
+                p.append(Post(lid, cond))
+
+            case "ref":
+                p.append(parse_ref(inst, modules))
+
+            # Handle standard instructions
+            case _:
+                op = parse_inst(line, p)
+                if op is not None:
+                    p.append(op)
+
+    return p
 
 # Parses a single instruction
 # @param line: the current instruction that needs to be parsed
@@ -667,7 +710,7 @@ def parse_file(inp: list[str]) -> Program:
     c: list[Contract] = []
     i = 0
     while i < len(inp):
-        symbols = inp[i].split(" ")
+        symbols = inp[i].strip().split(" ")
         # Check whether it's a module or a contract
         tag = symbols[0]
         match tag:
@@ -683,16 +726,21 @@ def parse_file(inp: list[str]) -> Program:
                 name = symbols[1]
                 assert check_name(name, m), f"Contract name {name} is not defined!"
                 (body, i) = scan_body(inp, i)
-                (prec, post) = parse_contract_body(body, m)
+                body = parse_contract_body(body, m)
                 # Create and store the module
-                m.append(Contract(name, prec, post))
+                c.append(Contract(name, body))
+
+            case "}":
+                i+=1
+                continue
 
             case _:
                 print(f"Unsupported structure: {tag} is not module | contract")
                 exit(1)
             
-    return None
+    return Program(m, c)
 
+# Parse a standard btor2 file, does not handle custom instructions
 def parse(inp: list[str]) -> list[Instruction]:
     # Split the string into instructions and read them 1 by 1
     p = []

@@ -1,0 +1,47 @@
+module A {
+    1 sort bitvec 32
+    2 input 1 A.d 
+    3 sort bitvec 1
+    4 input 3 A.en 
+    5 input 3 A.rst 
+    6 input 1 B.d 
+    7 input 3 B.en 
+    8 input 3 B.rst 
+    9 input 3 clk
+    10 state 1 A.q
+    11 output 10 qA 
+    12 state 1 B.q
+    13 output 12 qB 
+    14 uext 3 9 0 A.clk 
+    15 uext 3 9 0 B.clk 
+    16 ite 1 4 2 10
+    17 const 1 00000000000000000000000000000000
+    18 ite 1 5 17 16
+    19 next 1 10 18
+    20 ite 1 7 6 12
+    21 ite 1 8 17 20
+    22 next 1 12 21
+}
+contract A {
+    1 sort bitvec 1
+    2 ref A 1
+    3 const 2 0
+    4 ref A 2
+    5 eq 1 4 2
+    6 prec 3
+    7 ref A 10
+    8 ugt 1 7 2
+    9 post 5  
+}
+module C {
+    1 sort bitvec 32
+    2 input 1 C.i
+    3 inst A
+    4 ref A 1
+    5 set 3 4 2 
+    6 sort bitvec 1
+    7 const 1 0
+    8 ref A 10
+    9 eq 1 7 6
+    10 bad 7 
+}

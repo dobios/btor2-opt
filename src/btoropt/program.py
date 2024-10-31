@@ -77,10 +77,11 @@ class Instruction:
 def serialize_p(p: list[Instruction]) -> str:
     return reduce(lambda acc, s: acc + s.serialize() + "\n", p, "")
 
+# Extracts an instruction from a given program
 def get_inst(p: list[Instruction], lid: int) -> Instruction:
-    for op in p:
-        if op.lid == lid:
-            return op
+    ops = [op for op in p if op.lid == lid]
+    if len(ops) > 0:
+        return ops[0]
     return None
 
 # Sort declaration instruction
@@ -405,11 +406,11 @@ class Module(ModuleLike):
 # Only preconditions and postconditions are allowed
 # Name must be an existing module name 
 class Contract(ModuleLike):
-    def __init__(self, name: str, precondtions: list[Instruction], postconditions: list[Instruction]) -> None:
-        super().__init__(name, precondtions + postconditions)
-        self.preconditions = precondtions
-        self.preconditions = postconditions
-        assert len(precondtions) > 0 or len(postconditions) > 0, \
+    def __init__(self, name: str, body: list[Instruction]) -> None:
+        super().__init__(name, body)
+        self.preconditions = [i for i in body if isinstance(i, Prec)]
+        self.postconditions = [i for i in body if isinstance(i, Post)]
+        assert len(self.preconditions) > 0 or len(self.postconditions) > 0, \
             "Contracts must contain either a precondition or a post-condition!"
         
 
@@ -443,8 +444,16 @@ class Program():
     # @param name: the name of the contract we want to retrive
     def get_contract(self, name: str) -> Contract:
         res = [x for x in self.contracts if x.name == name]
-        ## Check if the given name is defined
-        assert len(res) > 0 , f"name: {name} is not defined!"
+        ## Check if the given name is defined, otherwise return None
+        if len(res) == 0:
+            return None
         return res[0]
+    
+    # Retrieves the contract associated to a module if it exists
+    # If it does not exist then simply return None
+    def get_module_contract(self, module: Module) -> Contract:
+        c = self.get_contract(module.name)
+        ## Check that a contract was found
+        return c
 
 ########################################################################
