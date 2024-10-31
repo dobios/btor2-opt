@@ -18,7 +18,8 @@
 
 # Abstract class for a compiler pass
 
-from ..program import Instruction
+from ..program import Instruction, Program, Module
+import multiprocessing
 
 # Base clas for compiler pass
 # @param id: the unique name of this pass
@@ -26,5 +27,13 @@ class Pass:
     def __init__(self, id: str):
         self.id = id
 
-    def run(p: list[Instruction]) -> list[Instruction]:
+    def run(self, p: list[Instruction]) -> list[Instruction]:
         return p
+    
+    # By default runs the standard pass in parallel on all modules
+    def runOnProgram(self, p: Program) -> Program:
+        pool = multiprocessing.Pool()
+        f = lambda m : Module(m.name, self.run(m.body))
+        p.modules = pool.map(f, p.modules)
+        return p
+

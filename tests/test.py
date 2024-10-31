@@ -27,10 +27,10 @@ def parsewrapper (filepath):
         btor2str = f.readlines()
     return btor2str
 
-class BTORTest(unittest.TestCase):
+class BTORTestParser(unittest.TestCase):
     """Check whether BTOR interface is working properly"""
 
-    def test_btor1(self):
+    def test_standard(self):
         prgm = parse(parsewrapper("tests/btor/reg_en.btor"))
 
         self.assertEqual(prgm[0].inst, "sort")
@@ -39,6 +39,19 @@ class BTORTest(unittest.TestCase):
 
         print("test passed")
 
+    def test_modular(self):
+            p: Program = parse_file(parsewrapper("tests/btor/modular.btor"))
+            self.assertIsNotNone(p)
+
+            self.assertEqual(len(p.modules), 2)
+            self.assertEqual(len(p.contracts), 1)
+            ma = p.get_module("A")
+            ca = p.get_contract("A")
+            self.assertIsNotNone(ca)
+            c = p.get_module_contract(ma)
+            self.assertIsNotNone(c)
+            self.assertEqual(c, ca)
+            self.assertEqual(c.name, "A")
 
 if __name__ == '__main__':
     unittest.main()
