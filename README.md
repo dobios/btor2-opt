@@ -6,6 +6,12 @@ Very basic btor2 parser, circuit miter, and code optimizer.
 pip install btor2-opt
 ```
 
+## Test 
+Unit tests can be run using: 
+```
+python -m unittest tests/test.py
+```
+
 ## Overview
 This repo contains two main scripts:
   - `btoropt`: Takes a `.btor2` file and a list of pass names as argument and prints out the transformed result.
@@ -81,3 +87,30 @@ This pass can then be called by running:
 ```sh
 btoropt ex.btor2 rename-inputs
 ```
+## Custom BTOR2 Extensions  
+`btoropt` currently supports custom extensions to the standard btor2 format, enabling the expression of modularity.
+In order to maintin inter-operability with standard btor2 files, this extension must be explicitly enabled using the `--modular` flag.
+These extensions are simply syntactic sugar to enable parallelism and can be lowered to standard btor2.
+This makes it possible to express the following custom structures: 
+
+| **Structure** | **Description** |
+|:---|:---|
+| `module <name> {...}` | Declares a named region of instructions |
+| `contract <module_name> {...} ` | Declares a contract for a module |
+
+Module bodies support all standard btor2 along with the following custom instructions:
+
+| **Module Instructions** | **Description** |
+|:---|:---|
+| `<lid> ref <module_name> <lid_in_module>` | References an instruction from another module |
+| `<lid> inst <module_name>` | Creates an instance of a module |
+| `<lid> set <instance_lid> <ref_lid> <local_lid>` | Sets an instance reference to a local instruction |
+
+Contract bodies support all standard btor2 along with the following custom instructions:
+
+| **Contract Instructions** | **Description** |
+|:---|:---|
+| `<lid> ref <module_name> <lid_in_module>` | References an instruction from the contract's module |
+| `<lid> prec <cond_lid>` | Declares a precondition |
+| `<lid> post <cond_lid>` | Declares a postcondition |
+
