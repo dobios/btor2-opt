@@ -27,7 +27,7 @@ from ...program import *
 
 class ApplyContracts(Pass):
     def __init__(self):
-        super().__init__("rename-inputs")
+        super().__init__("apply-contracts")
 
     # Replace an instance with either the inlined module or its applied contract
     # @param m: The module that contains the instance
@@ -46,19 +46,28 @@ class ApplyContracts(Pass):
         return None 
 
     def runOnProgram(self, p: Program) -> Program:
-        ## TODO: implement pass
-        cs: list[Contract] = []
-        
         # Iterate over all modules
         for i in range(0, len(p.modules)):
             m = p.modules[i]
             # The new module body
             res_m_body = []
 
-            # TODO: Do stuff on module
+            # Replace all instances in the module with a contract
+            for inst in m.body:
+                if isinstance(inst, Instance):
+                    inst_ = self.replaceInst(m, inst, p)
+                    res_m_body.append(inst_)
+                else:
+                    res_m_body.append(inst)
+            m.body = res_m_body
+                
+            # Once all of the instances are replaced, wrap the module in its contract
+            c = p.get_module_contract(m)
+            if c is None:
+                p.modules[i] = Module(m.name, res_m_body)
+            else:
+                p.modules[i] = self.wrapModuleWithContract(m, c)
 
-            # Replace the current module with the new version
-            p.modules[i] = Module(m.name, res_m_body)
-
-        return Program(p.modules, cs)
+        # After this no contracts should be left
+        return Program(p.modules, [])
 
