@@ -5,6 +5,10 @@ Very basic btor2 parser, circuit miter, and code optimizer.
 ```
 pip install btor2-opt
 ```
+For nix users
+```
+nix-shell -p 'python3.withPackages(ps: with ps; [ black build bumpver click colorama isort lexid looseversion mypy-extensions packaging pathspec pip-tools platformdirs pyproject-hooks toml tomli typing-extensions wheel])'
+```
 
 ## Test 
 Unit tests can be run using: 
