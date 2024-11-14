@@ -367,11 +367,10 @@ class Instance(Instruction):
         self.name = name
 
 # Reference to an instruction in a different named region
-# Has a weird infix notation `<mod_name>:<lid>`
 # Not really an instruction, more of a reference to an instruction
 class Ref(Instruction):
     def __init__(self, lid: int, name: str, val: Instruction):
-        super().__init__(lid, ":", [val], False)
+        super().__init__(lid, "ref", [val], False)
         self.name = name
         self.val = val
 
@@ -383,6 +382,9 @@ class Ref(Instruction):
 class Set(Instruction):
     def __init__(self, lid: int, instance: Instance, ref: Ref, alias: Instruction):
         super().__init__(lid, "set", [instance, ref, alias], False)
+        self.instance = instance
+        self.ref = ref
+        self.alias = alias
 
 
 # Structural extensions
@@ -413,7 +415,7 @@ class Contract(ModuleLike):
         assert len(self.preconditions) > 0 or len(self.postconditions) > 0, \
             "Contracts must contain either a precondition or a post-condition!"
         
-
+        
 # Base class for a custom btor2 file (standard is simply a list of instructions)
 class Program():
     def __init__(self, modules: list[Module], contracts: list[Contract]) -> None:
@@ -455,5 +457,52 @@ class Program():
         c = self.get_contract(module.name)
         ## Check that a contract was found
         return c
+    
+    # Find all of the references of this module
+    # @param module: the module that contains the reference
+    # @param instance: the instance that is being referenced
+    def get_instance_references(self, module: Module, instance: Instance) -> list[Ref]:
+        return [
+            i for i in module.body 
+            if isinstance(i, Ref) and i.name == instance.name
+        ]
+    
+    # Find all of the sets of this module
+    # @param module: the module that contains the reference
+    # @param instance: the instance that is being referenced
+    def get_instance_sets(self, module: Module, instance: Instance) -> list[Set]:
+        return [
+            i for i in module.body
+            if isinstance(i, Set) and i.instance == instance
+        ]
 
 ########################################################################
+
+# Retrieves an instruction with the given ID from the given standard program
+# This is a safe wrapper around `get_inst` and enforces that the given 
+# ID must be correct.
+def find_inst(p: list[Instruction], id: int) -> Instruction:
+    inst = get_inst(p, id)
+    assert inst is not None, f"Undeclared instruction used with id: {id}"
+    return inst
+
+# Checks thaa a given module name has been defined
+def check_name(name: str, modules: list[Module]) -> bool:
+    return name in [m.name for m in modules]
+
+# Retrives a module by name from a list of parsed modules
+def get_module(name: str, modules: list[Module]) -> Module:
+    return [m for m in modules if m.name == name][0]
+
+# Retrieves the uses of an instruction in a given standard program
+def get_uses(p: list[Instruction], inst: Instruction) -> list[Instruction]:
+    return [i for i in p if inst.lid in [lids for lids in i.operands]]
+
+# Retrieves the result sort of the given op
+def get_sort(p: list[Instruction], i: Instruction) -> Sort:
+    if isinstance(i, Bad) or isinstance(i, Constraint) or \
+        isinstance(i, Output) or not i.is_standard:
+        return None
+    if isinstance(i, Sort):
+        return i
+    return find_inst(p, i.operands[0])

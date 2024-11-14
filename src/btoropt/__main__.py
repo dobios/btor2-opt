@@ -62,7 +62,7 @@ def main():
             exit(1)
 
     # Retrieve passes
-    pipeline: list[Pass] = [p for p in all_passes if p.id in sys.argv[1:]]
+    pipeline: list[Pass] = [p for p in all_passes if p.id in sys.argv[base:]]
 
     # Run all passes in the pipeline
     for p in pipeline:
