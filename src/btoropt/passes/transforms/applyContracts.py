@@ -35,7 +35,46 @@ class ApplyContracts(Pass):
     # @param p: The entire program (used to identify modules and contracts by name)
     # @return the list of instructions that should take the instance's place
     def replaceInst(self, m: Module, i: Instance, p: Program) -> list[Instruction]:
-        return None
+        # Look for a contract
+        c = p.get_module_contract(m)
+        res = []
+        if c is None:
+            # Inline module
+            inline_m = p.get_module(i.name)
+            sets = p.get_instance_sets(m, i)
+            set_inputs = [(s.alias, s.ref.val, s.ref) for s in sets]
+            updated = []
+            for inst in inline_m:
+                # Check that the instruction is one set in the host module
+                aliases = [
+                    s for s in set_inputs 
+                    if s[1] == inst
+                ]
+                if len(aliases) > 0:
+                    (alias, inp, _) = aliases
+                    # check that the set's refernce is an input
+                    assert isinstance(inp, Input),\
+                        f"Only inputs can be set not {inp.inst}!"
+                    # Replace input with referenced instruction by updating all uses
+                    # with the alias of the input
+                    uses = get_uses(inline_m, inp)
+                    for u in uses:
+                        operands = []
+                        for op in u.operands:
+                            if op == inp:
+                                operands.append(alias)
+                            else:
+                                operands.append(op)
+                        u.operands = operands
+                        updated.append(u)
+                else:
+                    # check if the instruction has an updated operand list
+                    if inst.lid in [u.lid for u in updated]:
+                        res.append([u for u in updated if u.lid == inst.lid][0])
+                    else:
+                        res.append(inst)
+            
+        return res
     
     # Apply a contract to a module. This requires assuming preconditions on the module's inputs
     # Then asserting the postconditions at the end of the module

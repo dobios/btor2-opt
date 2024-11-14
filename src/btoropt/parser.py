@@ -18,22 +18,6 @@
 
 from .program import *
 
-# Retrieves an instruction with the given ID from the given standard program
-# This is a safe wrapper around `get_inst` and enforces that the given 
-# ID must be correct.
-def find_inst(p: list[Instruction], id: int) -> Instruction:
-    inst = get_inst(p, id)
-    assert inst is not None, f"Undeclared instruction used with id: {id}"
-    return inst
-
-# Checks thaa a given module name has been defined
-def check_name(name: str, modules: list[Module]) -> bool:
-    return name in [m.name for m in modules]
-
-# Retrives a module by name from a list of parsed modules
-def get_module(name: str, modules: list[Module]) -> Module:
-    return [m for m in modules if m.name == name][0]
-
 # Extracts a body from an arbitrary code sequence
 # Returns the line idx at which the scanning ended
 def scan_body(inp: list[str], i: int) -> tuple[list[str], int]:
