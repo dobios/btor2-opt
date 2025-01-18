@@ -42,7 +42,7 @@ This compiler currently supports the following btor2 instructions:
 | `<lid> state <sid> <name>` | Declares a stateful element |
 | `<lid> init <sid> <state> <val>` | Initializes a state |
 | `<lid> next <sid> <state> <next>` | Sets the transition logic of a state |
-| `<lid> slice <sid> <op> <w> <lb>` | Extracts bits `[lb:lb+w]` from a result |
+| `<lid> slice <sid> <op> <hb> <lb>` | Extracts bits `[hb:lb]` from a result |
 | `<lid> ite <sid> <cond> <t> <f>` | If-then-else expression |
 | `<lid> implies <sid> <lhs> <rhs>` | Logical implication |
 | `<lid> iff <sid> <lhs> <rhs>` | If and only if expression |
