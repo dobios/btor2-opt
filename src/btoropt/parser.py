@@ -19,7 +19,7 @@
 from .program import *
 
 # Retrieves an instruction with the given ID from the given standard program
-# This is a safe wrapper around `get_inst` and enforces that the given 
+# This is a safe wrapper around `get_inst` and enforces that the given
 # ID must be correct.
 def find_inst(p: list[Instruction], id: int) -> Instruction:
     inst = get_inst(p, id)
@@ -52,7 +52,7 @@ def scan_body(inp: list[str], i: int) -> tuple[list[str], int]:
     return (res, i)
 
 # Parses a ref instruction (only custom inst that is allowed in both modules and contracts)
-# @param inst: the pre-split ref instruction to be parsed 
+# @param inst: the pre-split ref instruction to be parsed
 # @param modules: the list of already parsed modules that can be referenced
 def parse_ref(inst: list[str], modules: list[Module]) -> Ref:
     ## Sanity check: Must be a ref instruction
@@ -455,7 +455,7 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
             # Find the operands associated to this instruction
             sort = find_inst(p, int(inst[2]))
             op1 = find_inst(p, int(inst[3]))
-            op2 = find_inst(int(inst[4]))
+            op2 = find_inst(p, int(inst[4]))
 
             # Construct instruction
             op = Smod(lid, sort, op1, op2)
@@ -603,7 +603,7 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
             # Sanity check: verify that instruction is well formed
             assert len(inst) >= 4,\
                 "redor instruction must be of the form: <lid> redor <srtid> <sid>. Found: " + line
-            
+
             # Find the operands associated to this instruction
             sort = find_inst(p, int(inst[2]))
             cond = find_inst(p, int(inst[3]))
@@ -800,7 +800,7 @@ def parse_file(inp: list[str]) -> Program:
                 b = parse_module_body(body, m)
                 # Create and store the module
                 m.append(Module(name, b))
-                            
+
             case "contract":
                 name = symbols[1]
                 assert check_name(name, m), f"Contract name {name} is not defined!"
@@ -816,7 +816,7 @@ def parse_file(inp: list[str]) -> Program:
             case _:
                 print(f"Unsupported structure: {tag} is not module | contract")
                 exit(1)
-            
+
     return Program(m, c)
 
 # Parse a standard btor2 file, does not handle custom instructions
