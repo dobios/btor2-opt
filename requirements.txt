@@ -50,6 +50,8 @@ typing-extensions==4.12.2
     # via black
 wheel==0.43.0
     # via pip-tools
+tqdm==4.67.1
+
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
