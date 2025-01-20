@@ -16,6 +16,9 @@ classifiers = [
 ]
 keywords = ["btor2", "parser", "compiler"]
 requires-python = ">=3.10"
+dependencies = [
+	"tqdm>=4.67.1"
+]
 
     [project.scripts]
     btoropt = "btoropt.__main__:main"

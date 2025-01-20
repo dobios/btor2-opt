@@ -17,6 +17,7 @@
 ##########################################################################
 
 from .program import *
+from tqdm import tqdm
 
 # Retrieves an instruction with the given ID from the given standard program
 # This is a safe wrapper around `get_inst` and enforces that the given
@@ -823,7 +824,7 @@ def parse_file(inp: list[str]) -> Program:
 def parse(inp: list[str]) -> list[Instruction]:
     # Split the string into instructions and read them 1 by 1
     p = []
-    for line in inp:
+    for line in tqdm(inp, desc="Parsing BTOR2"):
         op = parse_inst(line, p)
         if op is not None:
             p.append(op)
