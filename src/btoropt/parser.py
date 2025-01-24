@@ -764,7 +764,7 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
         case "uext":
             # Sanity check: verify that instruction is well formed
             assert len(inst) >= 5,\
-                "sort instruction must be of the form: <lid> uext <sid> <opid> <width> [<name>]. Found: " + line
+                "uext instruction must be of the form: <lid> uext <sid> <opid> <width> [<name>]. Found: " + line
 
             # Find the operands associated to this instruction
             sort = find_inst(p, int(inst[2]))
@@ -778,6 +778,24 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
 
             # Construct instruction
             op = Uext(lid, sort, operand, width, name)
+
+        case "sext":
+            # Sanity check: verify that instruction is well formed
+            assert len(inst) >= 5,\
+                "sext instruction must be of the form: <lid> sext <sid> <opid> <width> [<name>]. Found: " + line
+
+            # Find the operands associated to this instruction
+            sort = find_inst(p, int(inst[2]))
+            operand = find_inst(p, int(inst[3]))
+            width = int(inst[4])
+
+            if len(inst) >= 6:
+                name = inst[5].strip()
+            else:
+                name = f"sext_{inst[0]}"
+
+            # Construct instruction
+            op = Sext(lid, sort, operand, width, name)
 
         case _:
             print(f"Unsupported operation type: {tag} in {line}")
