@@ -839,11 +839,20 @@ def parse_file(inp: list[str]) -> Program:
     return Program(m, c)
 
 # Parse a standard btor2 file, does not handle custom instructions
-def parse(inp: list[str]) -> list[Instruction]:
+def parse(inp: list[str], gui=None) -> list[Instruction]:
     # Split the string into instructions and read them 1 by 1
     p = []
-    for line in tqdm(inp, desc="Parsing BTOR2"):
-        op = parse_inst(line, p)
-        if op is not None:
-            p.append(op)
+    if gui is None:
+        for line in tqdm(inp, desc="Parsing BTOR2"):
+            op = parse_inst(line, p)
+            if op is not None:
+                p.append(op)
+    else:
+        incr = 1.0/len(inp)
+        for line in inp:
+            gui.update_progress("Parsing BTOR2: ", incr)
+            op = parse_inst(line, p)
+            if op is not None:
+                p.append(op)
+        gui.reset_progress()
     return p
