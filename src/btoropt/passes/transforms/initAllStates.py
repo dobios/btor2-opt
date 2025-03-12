@@ -24,7 +24,7 @@ class InitAllStates(Pass):
     def __init__(self):
         super().__init__("init-all-states")
 
-    def run(p: list[Instruction]) -> list[Instruction]:
+    def run(self, p: list[Instruction]) -> list[Instruction]:
         res = []
         # start by extracting all states
         states: list[Instruction] = [s for s in p if isinstance(s, State)]

@@ -27,7 +27,7 @@ class RenameInputs(Pass):
 
     # I chose to have this pass not modify p in place
     # you can also simply modify p and return it
-    def run(p: list[Instruction]) -> list[Instruction]:
+    def run(self, p: list[Instruction]) -> list[Instruction]:
         i = 0
         res = []
         for inst in p:
