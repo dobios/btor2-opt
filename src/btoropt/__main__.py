@@ -55,6 +55,8 @@ def main():
     
     assert btor2 is not None
 
+    base += 1
+
     # Check that the given pass names are valid
     for name in sys.argv[base:]:
         if find_pass(all_passes, name) is None:
