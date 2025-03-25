@@ -32,8 +32,10 @@ def main():
     # Check options
     base = 1
     modular = False
-    if "--" in sys.argv[1].strip():
-        option = sys.argv[1].strip().strip("--")
+    
+    # NOTE: This if should be a while if you want to introduce more than one option
+    if "--" in sys.argv[base].strip():
+        option = sys.argv[base].strip().strip("--")
         if option not in options:
             print(f"Invalid option given: {option}")
             exit(1)
@@ -55,14 +57,18 @@ def main():
     
     assert btor2 is not None
 
+    # Fetch the pass names
+    pass_base = base + 1
+    pass_names = sys.argv[pass_base:]
+
     # Check that the given pass names are valid
-    for name in sys.argv[base:]:
+    for name in pass_names:
         if find_pass(all_passes, name) is None:
             print(f"Invalid pass given as argument: {name}")
             exit(1)
 
     # Retrieve passes
-    pipeline: list[Pass] = [p for p in all_passes if p.id in sys.argv[base:]]
+    pipeline: list[Pass] = [p for p in all_passes if p.id in pass_names]
 
     # Run all passes in the pipeline
     for p in pipeline:

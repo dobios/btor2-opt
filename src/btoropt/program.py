@@ -23,7 +23,9 @@ tags = ["sort","input", "output", "bad", "constraint", "zero",
         "one", "ones", "constd", "consth", "const", "state",
         "init", "next", "slice", "ite", "implies", "iff",
         "add", "sub", "mul", "sdiv", "udiv", "smod", "sll",
-        "srl", "sra", "and", "or", "xor", "concat", "not",
+        "srl", "sra", "and", "or", "xor", "concat", 
+        # Unary operations
+        "not", "inc", "dec", "neg", "redor", "redxor", "redand",
         "eq", "neq", "ugt", "sgt", "ugte", "sgte", "ult",
         "slt", "ulte", "slte", "uext", "sext"]
 
@@ -148,6 +150,30 @@ class Not(Instruction):
     def __init__(self, lid: int, sort: Sort, cond: Instruction):
         super().__init__(lid, "not", [sort, cond])
 
+class Inc(Instruction):
+    def __init__(self, lid: int, sort: Sort, op1: Instruction):
+        super().__init__(lid, "inc", [sort, op1])
+
+class Dec(Instruction):
+    def __init__(self, lid: int, sort: Sort, op1: Instruction):
+        super().__init__(lid, "dec", [sort, op1])
+
+class Neg(Instruction):
+    def __init__(self, lid: int, sort: Sort, op1: Instruction):
+        super().__init__(lid, "neg", [sort, op1])
+
+class Redor(Instruction):
+    def __init__(self, lid: int, sort: Sort, op1: Instruction):
+        super().__init__(lid, "redor", [sort, op1])
+
+class Redxor(Instruction):
+    def __init__(self, lid: int, sort: Sort, op1: Instruction):
+        super().__init__(lid, "redxor", [sort, op1])
+
+class Redand(Instruction):
+    def __init__(self, lid: int, sort: Sort, op1: Instruction):
+        super().__init__(lid, "redand", [sort, op1])
+
 ## Constants: always of the form Instruction + sort + value ##
 
 class Constd(Instruction):
@@ -210,13 +236,14 @@ class Next(Instruction):
         self.stid = state.lid
 
 class Slice(Instruction):
-    def __init__(self, lid: int, sort: Sort, op: Instruction, width: int, lowbit: int):
+    def __init__(self, lid: int, sort: Sort, op: Instruction, highbit: int, lowbit: int):
         super().__init__(lid, "slice", [sort, op])
-        self.width: int = width
+        self.highbit: int = highbit
         self.lowbit: int = lowbit
+        self.width = (self.highbit-self.lowbit+1)
 
     def eq(self, inst) -> bool:
-        return super().eq(inst) and self.width == inst.width and self.lowbit == inst.lowbit
+        return super().eq(inst) and self.highbit == inst.highbit and self.lowbit == inst.lowbit
 
     def serialize(self) -> str:
         return super().serialize() + str(self.width) + " " + str(self.lowbit)

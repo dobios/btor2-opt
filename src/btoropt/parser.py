@@ -17,6 +17,7 @@
 ##########################################################################
 
 from .program import *
+from tqdm import tqdm
 
 # Extracts a body from an arbitrary code sequence
 # Returns the line idx at which the scanning ended
@@ -36,7 +37,7 @@ def scan_body(inp: list[str], i: int) -> tuple[list[str], int]:
     return (res, i)
 
 # Parses a ref instruction (only custom inst that is allowed in both modules and contracts)
-# @param inst: the pre-split ref instruction to be parsed 
+# @param inst: the pre-split ref instruction to be parsed
 # @param modules: the list of already parsed modules that can be referenced
 def parse_ref(inst: list[str], modules: list[Module]) -> Ref:
     ## Sanity check: Must be a ref instruction
@@ -153,15 +154,19 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
 
         case "input":
             # Sanity check: verify that instruction is well formed
-            assert len(inst) >= 4,\
-                "input instruction must be of the form: <lid> input <sid> <name>. Found: " + line
+            assert len(inst) >= 3,\
+                "input instruction must be of the form: <lid> input <sid> [<name>]. Found: " + line
 
             # Find the sort associated to this instruction
             sort = find_inst(p, int(inst[2]))
             assert isinstance(sort, Sort), f"Input sort must be a Sort. Found: " + line
 
+            if len(inst) >= 4:
+                name = inst[3].strip()
+            else:
+                name = f"input_{inst[0]}"
             # Construct instruction
-            op = Input(lid, sort, inst[3])
+            op = Input(lid, sort, name)
 
         case "output":
             # Sanity check: verify that instruction is well formed
@@ -268,13 +273,16 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
 
         case "state":
             # Sanity check: verify that instruction is well formed
-            assert len(inst) >= 4,\
-                "state instruction must be of the form: <lid> state <sid> <name>. Found: " + line
+            assert len(inst) >= 3,\
+                "state instruction must be of the form: <lid> state <sid> [<name>]. Found: " + line
 
             # Find the operands associated to this instruction
             sort = find_inst(p, int(inst[2]))
             assert isinstance(sort, Sort), f"State sort must be a Sort. Found: " + line
-            name = inst[3].strip()
+            if len(inst) >= 4:
+                name = inst[3].strip()
+            else:
+                name = f"state_{inst[0]}"
 
             # Construct instruction
             op = State(lid, sort, name)
@@ -308,16 +316,16 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
         case "slice":
             # Sanity check: verify that instruction is well formed
             assert len(inst) >= 6,\
-                "sort instruction must be of the form: <lid> slice <sid> <opid> <width> <lowbit>. Found: " + line
+                "slice instruction must be of the form: <lid> slice <sid> <opid> <highbit> <lowbit>. Found: " + line
 
             # Find the operands associated to this instruction
             sort = find_inst(p, int(inst[2]))
             operand = find_inst(p, int(inst[3]))
-            width = int(inst[4])
+            highbit = int(inst[4])
             lowbit = int(inst[5])
 
             # Construct instruction
-            op = Slice(lid, sort, operand, width, lowbit)
+            op = Slice(lid, sort, operand, highbit, lowbit)
 
         case "ite":
             # Sanity check: verify that instruction is well formed
@@ -432,7 +440,7 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
             # Find the operands associated to this instruction
             sort = find_inst(p, int(inst[2]))
             op1 = find_inst(p, int(inst[3]))
-            op2 = find_inst(int(inst[4]))
+            op2 = find_inst(p, int(inst[4]))
 
             # Construct instruction
             op = Smod(lid, sort, op1, op2)
@@ -531,7 +539,7 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
         case "not":
             # Sanity check: verify that instruction is well formed
             assert len(inst) >= 4,\
-                "sort instruction must be of the form: <lid> not <sid> <cond>. Found: " + line
+                "not instruction must be of the form: <lid> not <sid> <cond>. Found: " + line
 
             # Find the operands associated to this instruction
             sort = find_inst(p, int(inst[2]))
@@ -539,6 +547,73 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
 
             # Construct instruction
             op = Not(lid, sort, cond)
+
+        case "inc":
+            # Sanity check: verify that instruction is well formed
+            assert len(inst) >= 4,\
+                "inc instruction must be of the form: <lid> inc <sid> <stateid>. Found: " + line
+
+            # Find the operands associated to this instruction
+            sort = find_inst(p, int(inst[2]))
+            state = find_inst(p, int(inst[3]))
+
+            # Construct instruction
+            op = Inc(lid, sort, state)
+
+        case "dec":
+            # Sanity check: verify that instruction is well formed
+            assert len(inst) >= 4,\
+                "dec instruction must be of the form: <lid> dec <sid> <stateid>. Found: " + line
+
+            # Find the operands associated to this instruction
+            sort = find_inst(p, int(inst[2]))
+            state = find_inst(p, int(inst[3]))
+
+            # Construct instruction
+            op = Dec(lid, sort, state)
+
+        case "neg":
+            # Sanity check: verify that instruction is well formed
+            assert len(inst) >= 4,\
+                "neg instruction must be of the form: <lid> neg <sid> <cond>. Found: " + line
+
+            # Find the operands associated to this instruction
+            sort = find_inst(p, int(inst[2]))
+            cond = find_inst(p, int(inst[3]))
+
+            # Construct instruction
+            op = Neg(lid, sort, cond)
+
+        case "redor":
+            # Sanity check: verify that instruction is well formed
+            assert len(inst) >= 4,\
+                "redor instruction must be of the form: <lid> redor <srtid> <sid>. Found: " + line
+
+            # Find the operands associated to this instruction
+            sort = find_inst(p, int(inst[2]))
+            cond = find_inst(p, int(inst[3]))
+
+            # Construct instruction
+            op = Redor(lid, sort, cond)
+
+        case "redand":
+            # Sanity check: verify that instruction is well formed
+            assert len(inst) >= 4,\
+                "redand instruction must be of the form: <lid> redand <srtid> <sid>. Found: " + line
+            # Find the operands associated to this instruction
+            sort = find_inst(p, int(inst[2]))
+            cond = find_inst(p, int(inst[3]))
+            # Construct instruction
+            op = Redand(lid, sort, cond)
+        case "redxor":
+            # Sanity check: verify that instruction is well formed
+            assert len(inst) >= 4,\
+                "redxor instruction must be of the form: <lid> redxor <srtid> <sid>. Found: " + line
+            # Find the operands associated to this instruction
+            sort = find_inst(p, int(inst[2]))
+            cond = find_inst(p, int(inst[3]))
+            # Construct instruction
+            op = Redxor(lid, sort, cond)
 
         case "eq":
             # Sanity check: verify that instruction is well formed
@@ -672,16 +747,39 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
 
         case "uext":
             # Sanity check: verify that instruction is well formed
-            assert len(inst) >= 6,\
-                "sort instruction must be of the form: <lid> uext <sid> <opid> <width> <name>. Found: " + line
+            assert len(inst) >= 5,\
+                "uext instruction must be of the form: <lid> uext <sid> <opid> <width> [<name>]. Found: " + line
 
             # Find the operands associated to this instruction
             sort = find_inst(p, int(inst[2]))
             operand = find_inst(p, int(inst[3]))
             width = int(inst[4])
 
+            if len(inst) >= 6:
+                name = inst[5].strip()
+            else:
+                name = f"uext_{inst[0]}"
+
             # Construct instruction
-            op = Uext(lid, sort, operand, width, inst[5])
+            op = Uext(lid, sort, operand, width, name)
+
+        case "sext":
+            # Sanity check: verify that instruction is well formed
+            assert len(inst) >= 5,\
+                "sext instruction must be of the form: <lid> sext <sid> <opid> <width> [<name>]. Found: " + line
+
+            # Find the operands associated to this instruction
+            sort = find_inst(p, int(inst[2]))
+            operand = find_inst(p, int(inst[3]))
+            width = int(inst[4])
+
+            if len(inst) >= 6:
+                name = inst[5].strip()
+            else:
+                name = f"sext_{inst[0]}"
+
+            # Construct instruction
+            op = Sext(lid, sort, operand, width, name)
 
         case _:
             print(f"Unsupported operation type: {tag} in {line}")
@@ -705,7 +803,7 @@ def parse_file(inp: list[str]) -> Program:
                 b = parse_module_body(body, m)
                 # Create and store the module
                 m.append(Module(name, b))
-                            
+
             case "contract":
                 name = symbols[1]
                 assert check_name(name, m), f"Contract name {name} is not defined!"
@@ -721,14 +819,14 @@ def parse_file(inp: list[str]) -> Program:
             case _:
                 print(f"Unsupported structure: {tag} is not module | contract")
                 exit(1)
-            
+
     return Program(m, c)
 
 # Parse a standard btor2 file, does not handle custom instructions
 def parse(inp: list[str]) -> list[Instruction]:
     # Split the string into instructions and read them 1 by 1
     p = []
-    for line in inp:
+    for line in tqdm(inp, desc="Parsing BTOR2"):
         op = parse_inst(line, p)
         if op is not None:
             p.append(op)
