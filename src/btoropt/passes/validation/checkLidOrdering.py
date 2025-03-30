@@ -24,7 +24,7 @@ class CheckLidOrdering(Pass):
     def __init__(self):
         super().__init__("check-lid-ordering")
 
-    def run(p: list[Instruction]) -> list[Instruction]:
+    def run(self, p: list[Instruction]) -> list[Instruction]:
         res = []
 
         for i in range(len(p)):
