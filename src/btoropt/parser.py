@@ -187,13 +187,18 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
         case "output":
             # Sanity check: verify that instruction is well formed
             assert len(inst) >= 3,\
-                "input instruction must be of the form: <lid> output <opid>. Found: " + line
+                "output instruction must be of the form: <lid> output <opid> [name]. Found: " + line
 
             # Find the op associated to this instruction
             out = find_inst(p, int(inst[2]))
 
+            if len(inst) >= 4:
+                name = inst[3].strip()
+            else:
+                name = f"output_{inst[0]}"
+
             # Construct instruction
-            op = Output(lid, out)
+            op = Output(lid, out, name)
 
         case "bad":
             # Sanity check: verify that instruction is well formed
