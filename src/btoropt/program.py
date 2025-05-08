@@ -22,8 +22,9 @@ from functools import reduce
 tags = ["sort","input", "output", "bad", "constraint", "zero",
         "one", "ones", "constd", "consth", "const", "state",
         "init", "next", "slice", "ite", "implies", "iff",
-        "add", "sub", "mul", "sdiv", "udiv", "smod", "sll",
-        "srl", "sra", "and", "or", "xor", "concat", 
+        "add", "sub", "mul", "sdiv", "udiv", "smod", 
+        "srem", "urem", "sll", "srl", "sra", "and", 
+        "or", "xor", "concat", 
         # Unary operations
         "not", "inc", "dec", "neg", "redor", "redxor", "redand",
         "eq", "neq", "ugt", "sgt", "ugte", "sgte", "ult",
