@@ -286,6 +286,14 @@ class Smod(Instruction):
     def __init__(self, lid: int, sort: Sort, op1: Instruction, op2: Instruction):
         super().__init__(lid, "smod", [sort, op1, op2])
 
+class Srem(Instruction):
+    def __init__(self, lid: int, sort: Sort, op1: Instruction, op2: Instruction):
+        super().__init__(lid, "srem", [sort, op1, op2])
+
+class Urem(Instruction):
+    def __init__(self, lid: int, sort: Sort, op1: Instruction, op2: Instruction):
+        super().__init__(lid, "srem", [sort, op1, op2])
+
 class Sll(Instruction):
     def __init__(self, lid: int, sort: Sort, op1: Instruction, op2: Instruction):
         super().__init__(lid, "sll", [sort, op1, op2])
