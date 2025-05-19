@@ -293,7 +293,7 @@ class Srem(Instruction):
 
 class Urem(Instruction):
     def __init__(self, lid: int, sort: Sort, op1: Instruction, op2: Instruction):
-        super().__init__(lid, "srem", [sort, op1, op2])
+        super().__init__(lid, "urem", [sort, op1, op2])
 
 class Sll(Instruction):
     def __init__(self, lid: int, sort: Sort, op1: Instruction, op2: Instruction):
