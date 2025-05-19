@@ -187,13 +187,18 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
         case "output":
             # Sanity check: verify that instruction is well formed
             assert len(inst) >= 3,\
-                "input instruction must be of the form: <lid> output <opid>. Found: " + line
+                "output instruction must be of the form: <lid> output <opid> [name]. Found: " + line
 
             # Find the op associated to this instruction
             out = find_inst(p, int(inst[2]))
 
+            if len(inst) >= 4:
+                name = inst[3].strip()
+            else:
+                name = f"output_{inst[0]}"
+
             # Construct instruction
-            op = Output(lid, out)
+            op = Output(lid, out, name)
 
         case "bad":
             # Sanity check: verify that instruction is well formed
@@ -460,6 +465,33 @@ def parse_inst(line: str, p: list[Instruction]) -> Instruction:
 
             # Construct instruction
             op = Smod(lid, sort, op1, op2)
+
+        case "srem":
+            # Sanity check: verify that instruction is well formed
+            assert len(inst) >= 5,\
+                "sort instruction must be of the form: <lid> srem <sid> <op1> <op2>. Found: " + line
+
+            # Find the operands associated to this instruction
+            sort = find_inst(p, int(inst[2]))
+            op1 = find_inst(p, int(inst[3]))
+            op2 = find_inst(p, int(inst[4]))
+
+            # Construct instruction
+            op = Srem(lid, sort, op1, op2)
+
+        case "urem":
+            # Sanity check: verify that instruction is well formed
+            assert len(inst) >= 5,\
+                "sort instruction must be of the form: <lid> urem <sid> <op1> <op2>. Found: " + line
+
+            # Find the operands associated to this instruction
+            sort = find_inst(p, int(inst[2]))
+            op1 = find_inst(p, int(inst[3]))
+            op2 = find_inst(p, int(inst[4]))
+
+            # Construct instruction
+            op = Urem(lid, sort, op1, op2)
+
 
         case "sll":
             # Sanity check: verify that instruction is well formed
