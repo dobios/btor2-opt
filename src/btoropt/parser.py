@@ -47,6 +47,10 @@ class Parser:
         inst = get_inst(self.p, id)
         assert inst is not None, f"Undeclared instruction used with id: {id}"
         return inst
+    
+    # Defers the resolution of all operand IDs
+    def defer(self, ids: list[str]) -> list[Instruction]:
+        return map(lambda id: Instruction(int(id)), ids)
 
     # Parses a single instruction
     # @param line: the current instruction that needs to be parsed
@@ -76,7 +80,6 @@ class Parser:
                 # Construct instruction
                 op = Sort(lid, inst[2], int(inst[3]))
 
-
             case "input":
                 # Sanity check: verify that instruction is well formed
                 assert len(inst) >= 3,\
@@ -98,8 +101,8 @@ class Parser:
                 assert len(inst) >= 3,\
                     "output instruction must be of the form: <lid> output <opid> [name]. Found: " + line
 
-                # Find the op associated to this instruction
-                out = self.find_inst(int(inst[2]))
+                # Set a temporary instruction to be resolved later
+                out = self.defer(inst[2])[0]
 
                 if len(inst) >= 4:
                     name = inst[3].strip()
@@ -115,7 +118,7 @@ class Parser:
                     "sort instruction must be of the form: <lid> bad <opid>. Found: " + line
 
                 # Find the op associated to this instruction
-                cond = self.find_inst(int(inst[2]))
+                cond = Instruction(int(inst[2]))  # self.find_inst(int(inst[2]))
 
                 # Construct instruction
                 op = Bad(lid, cond)
@@ -126,7 +129,7 @@ class Parser:
                     "sort instruction must be of the form: <lid> constraint <opid>. Found: " + line
 
                 # Find the op associated to this instruction
-                cond = self.find_inst(int(inst[2]))
+                cond = Instruction(int(inst[2]))  # self.find_inst(int(inst[2]))
 
                 # Construct instruction
                 op = Constraint(lid, cond)
@@ -743,9 +746,23 @@ class Parser:
                 exit(1)
         return op
 
+    # Resolves the IDs of all of the operands
+    def resolveIds(self, inst: Instruction) -> Instruction:
+        return Instruction( \
+            inst.lid, inst.inst, \
+            map(lambda op: self.context.get(op.lid), inst.operands) \
+        )
+
     # Parses the entire program in parallel
     def parsePar(self) -> list[Instruction]:
-        return pool.map(self.parse_inst, self.p_str)
+        self.p = pool.map(self.parse_inst, self.p_str)
+
+        # Create the context from the parsed program
+        self.context = dict(map(lambda inst: (inst.lid, inst), self.p))
+
+        # Resolve all of the IDs in parallel
+        self.p = pool.map(self.resolveIds, self.p)
+
 
     # Parse a standard btor2 file, does not handle custom instructions
     def parseSeq(self) -> list[Instruction]:
