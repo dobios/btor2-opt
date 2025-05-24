@@ -423,7 +423,7 @@ class Set(Instruction):
 
 
 # Structural extensions
-class ModuleLike():
+class ModuleLike:
     def __init__(self, name: str, body: list[Instruction]) -> None:
         self.name = name
         self.body = body
@@ -452,7 +452,7 @@ class Contract(ModuleLike):
         
 
 # Base class for a custom btor2 file (standard is simply a list of instructions)
-class Program():
+class Program:
     def __init__(self, modules: list[Module], contracts: list[Contract]) -> None:
         self.modules = modules
         # Ignore all contracts that don't have an existing name

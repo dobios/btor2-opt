@@ -22,6 +22,13 @@ import multiprocessing
 
 pool = multiprocessing.Pool()
 
+# Trying to maintain original parser API
+def parse(p_str: list[str], par=False) -> list[Instruction]:
+    parse = Parser(p_str)
+    if par:
+        return parse.parsePar()
+    return parse.parseSeq()
+
 # Parses a given btor2 program
 class Parser:
     # @param{p_str: list[str]}: list of lines to parse

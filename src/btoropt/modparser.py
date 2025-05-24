@@ -20,6 +20,11 @@ from .program import *
 from parser import *
 from tqdm import tqdm
 
+# Old API for module parsing
+def parse_file(file: list[str]) -> Program:
+    parser = ModParser(file)
+    return parser.parse_file()
+
 # Special parser that handles custom instructions
 class ModParser(Parser):
     def __init__(self, p_str):
