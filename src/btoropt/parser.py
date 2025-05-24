@@ -1,6 +1,6 @@
 ##########################################################################
 # BTOR2 parser, code optimizer, and circuit miter
-# Copyright (C) 2024  Amelia Dobis
+# Copyright (C) 2024-2025  Amelia Dobis
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,16 +36,14 @@ class Parser:
         self.p : list[Instruction] = []
         self.p_str : list[str] = p_str
         self.context : dict[int, Instruction] = {}
+        self.done = False # Whether or not the parser is done parsing
 
-    def clear(self):
-        self.p = []
-        self.p_str = []
-        self.context = {}
-
-    def reset(self, p_str: list[str]):
+    # Resets the parser to be used again
+    def clear(self, p_str: list[str] = []):
         self.p = []
         self.p_str = p_str
         self.context = {}
+        self.done = False
 
     # Retrieves an instruction with the given ID from the given standard program
     # This is a safe wrapper around `get_inst` and enforces that the given
@@ -85,8 +83,7 @@ class Parser:
                     f"sort must be of type bitvector or array! Found: {inst[2]}"
 
                 # Construct instruction, defer if required
-                op = self.defer(inst[3]) if deferred else \
-                        Sort(lid, inst[2], int(inst[3]))
+                op = Sort(lid, inst[2], int(inst[3]))
 
             case "input":
                 # Sanity check: verify that instruction is well formed
@@ -94,8 +91,9 @@ class Parser:
                     "input instruction must be of the form: <lid> input <sid> [<name>]. Found: " + line
 
                 # Find the sort associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                assert isinstance(sort, Sort), f"Input sort must be a Sort. Found: " + line
+                sort = self.defer(inst[2])[0] if deferred else \
+                        self.find_inst(int(inst[2]))
+                # assert isinstance(sort, Sort), f"Input sort must be a Sort. Found: " + line
 
                 if len(inst) >= 4:
                     name = inst[3].strip()
@@ -110,7 +108,8 @@ class Parser:
                     "output instruction must be of the form: <lid> output <opid> [name]. Found: " + line
 
                 # Set a temporary instruction to be resolved later
-                out = self.find_inst(int(inst[2]))
+                out = self.defer(inst[2])[0] if deferred else \
+                        self.find_inst(int(inst[2]))
 
                 if len(inst) >= 4:
                     name = inst[3].strip()
@@ -126,7 +125,8 @@ class Parser:
                     "sort instruction must be of the form: <lid> bad <opid>. Found: " + line
 
                 # Find the op associated to this instruction
-                cond = self.find_inst(int(inst[2]))
+                cond = self.defer(inst[2])[0] if deferred else \
+                        self.find_inst(int(inst[2]))
 
                 # Construct instruction
                 op = Bad(lid, cond)
@@ -137,7 +137,8 @@ class Parser:
                     "sort instruction must be of the form: <lid> constraint <opid>. Found: " + line
 
                 # Find the op associated to this instruction
-                cond = self.find_inst(int(inst[2]))
+                cond = self.defer(inst[2])[0] if deferred else \
+                        self.find_inst(int(inst[2]))
 
                 # Construct instruction
                 op = Constraint(lid, cond)
@@ -148,7 +149,8 @@ class Parser:
                     "sort instruction must be of the form: <lid> zero <sid>. Found: " + line
 
                 # Find the sort associated to this instruction
-                sort = self.find_inst(int(inst[2]))
+                sort = self.defer(inst[2])[0] if deferred else \
+                        self.find_inst(int(inst[2]))
 
                 # Construct instruction
                 op = Zero(lid, sort)
@@ -159,7 +161,8 @@ class Parser:
                     "sort instruction must be of the form: <lid> one <sid>. Found: " + line
 
                 # Find the sort associated to this instruction
-                sort = self.find_inst(int(inst[2]))
+                sort = self.defer(inst[2])[0] if deferred else \
+                        self.find_inst(int(inst[2]))
 
                 # Construct instruction
                 op = One(lid, sort)
@@ -170,7 +173,8 @@ class Parser:
                     "sort instruction must be of the form: <lid> ones <sid>. Found: " + line
 
                 # Find the sort associated to this instruction
-                sort = self.find_inst(int(inst[2]))
+                sort = self.defer(inst[2])[0] if deferred else \
+                        self.find_inst(int(inst[2]))
 
                 # Construct instruction
                 op = Ones(lid, sort)
@@ -181,7 +185,8 @@ class Parser:
                     "sort instruction must be of the form: <lid> constd <sid> <value>. Found: " + line
 
                 # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
+                sort = self.defer(inst[2])[0] if deferred else \
+                        self.find_inst(int(inst[2]))
                 value = int(inst[3])
 
                 # Construct instruction
@@ -193,7 +198,8 @@ class Parser:
                     "sort instruction must be of the form: <lid> consth <sid> <value>. Found: " + line
 
                 # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
+                sort = self.defer(inst[2])[0] if deferred else \
+                        self.find_inst(int(inst[2]))
                 value = int(inst[3])
 
                 # Construct instruction
@@ -205,7 +211,8 @@ class Parser:
                     "sort instruction must be of the form: <lid> const <sid> <value>. Found: " + line
 
                 # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
+                sort = self.defer(inst[2])[0] if deferred else \
+                        self.find_inst(int(inst[2]))
                 # Default base is 2
                 value = int(inst[3], 2)
 
@@ -218,8 +225,9 @@ class Parser:
                     "state instruction must be of the form: <lid> state <sid> [<name>]. Found: " + line
 
                 # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                assert isinstance(sort, Sort), f"State sort must be a Sort. Found: " + line
+                sort = self.defer(inst[2])[0] if deferred else \
+                        self.find_inst(int(inst[2]))
+                # assert isinstance(sort, Sort), f"State sort must be a Sort. Found: " + line
                 if len(inst) >= 4:
                     name = inst[3].strip()
                 else:
@@ -233,10 +241,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> init <sid> <stateid> <valueid>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                state = self.find_inst(int(inst[3]))
-                val = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, state, val) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Init(lid, sort, state, val)
@@ -246,10 +254,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> next <sid> <stateid> <nextid>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                state = self.find_inst(int(inst[3]))
-                next = self.find_inst(int(inst[4]))
+               # Find the operands associated to this instruction or defer
+                (sort, state, next) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Next(lid, sort, state, next)
@@ -259,9 +267,11 @@ class Parser:
                 assert len(inst) >= 6,\
                     "slice instruction must be of the form: <lid> slice <sid> <opid> <highbit> <lowbit>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                operand = self.find_inst(int(inst[3]))
+                # Find the operands associated to this instruction or defer
+                (sort, operand) = \
+                    tuple(self.defer(inst[2:4])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:4]))
+                
                 highbit = int(inst[4])
                 lowbit = int(inst[5])
 
@@ -273,11 +283,10 @@ class Parser:
                 assert len(inst) >= 6,\
                     "sort instruction must be of the form: <lid> ite <sid> <condid> <tid> <fid>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                cond = self.find_inst(int(inst[3]))
-                t = self.find_inst(int(inst[4]))
-                f = self.find_inst(int(inst[5]))
+                # Find the operands associated to this instruction or defer
+                (sort, cond, t, f) = \
+                    tuple(self.defer(inst[2:6])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:6]))
 
                 # Construct instruction
                 op = Ite(lid, sort, cond, t, f)
@@ -287,10 +296,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> implies <sid> <lhsid> <rhsid>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                lhs = self.find_inst(int(inst[3]))
-                rhs = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, lhs, rhs) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Implies(lid, sort, lhs, rhs)
@@ -300,10 +309,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> iff <sid> <lhsid> <rhsid>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                lhs = self.find_inst(int(inst[3]))
-                rhs = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, lhs, rhs) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Iff(lid, sort, lhs, rhs)
@@ -313,10 +322,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> add <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Add(lid, sort, op1, op2)
@@ -326,10 +335,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> sub <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Sub(lid, sort, op1, op2)
@@ -339,10 +348,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> mul <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Mul(lid, sort, op1, op2)
@@ -352,10 +361,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> sdiv <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Sdiv(lid, sort, op1, op2)
@@ -365,10 +374,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> udiv <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Udiv(lid, sort, op1, op2)
@@ -378,10 +387,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> smod <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Smod(lid, sort, op1, op2)
@@ -391,10 +400,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> srem <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Srem(lid, sort, op1, op2)
@@ -404,10 +413,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> urem <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Urem(lid, sort, op1, op2)
@@ -418,10 +427,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> sll <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Sll(lid, sort, op1, op2)
@@ -431,10 +440,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> srl <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Srl(lid, sort, op1, op2)
@@ -444,10 +453,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> sra <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Sra(lid, sort, op1, op2)
@@ -457,10 +466,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> and <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = And(lid, sort, op1, op2)
@@ -470,10 +479,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> or <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Or(lid, sort, op1, op2)
@@ -483,10 +492,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> xor <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Xor(lid, sort, op1, op2)
@@ -496,10 +505,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> concat <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Concat(lid, sort, op1, op2)
@@ -509,9 +518,10 @@ class Parser:
                 assert len(inst) >= 4,\
                     "not instruction must be of the form: <lid> not <sid> <cond>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                cond = self.find_inst(int(inst[3]))
+                # Find the operands associated to this instruction or defer
+                (sort, cond) = \
+                    tuple(self.defer(inst[2:4])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:4]))
 
                 # Construct instruction
                 op = Not(lid, sort, cond)
@@ -521,9 +531,10 @@ class Parser:
                 assert len(inst) >= 4,\
                     "inc instruction must be of the form: <lid> inc <sid> <stateid>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                state = self.find_inst(int(inst[3]))
+                # Find the operands associated to this instruction or defer
+                (sort, state) = \
+                    tuple(self.defer(inst[2:4])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:4]))
 
                 # Construct instruction
                 op = Inc(lid, sort, state)
@@ -533,9 +544,10 @@ class Parser:
                 assert len(inst) >= 4,\
                     "dec instruction must be of the form: <lid> dec <sid> <stateid>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                state = self.find_inst(int(inst[3]))
+                # Find the operands associated to this instruction or defer
+                (sort, state) = \
+                    tuple(self.defer(inst[2:4])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:4]))
 
                 # Construct instruction
                 op = Dec(lid, sort, state)
@@ -545,9 +557,10 @@ class Parser:
                 assert len(inst) >= 4,\
                     "neg instruction must be of the form: <lid> neg <sid> <cond>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                cond = self.find_inst(int(inst[3]))
+                # Find the operands associated to this instruction or defer
+                (sort, cond) = \
+                    tuple(self.defer(inst[2:4])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:4]))
 
                 # Construct instruction
                 op = Neg(lid, sort, cond)
@@ -557,9 +570,10 @@ class Parser:
                 assert len(inst) >= 4,\
                     "redor instruction must be of the form: <lid> redor <srtid> <sid>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                cond = self.find_inst(int(inst[3]))
+                # Find the operands associated to this instruction or defer
+                (sort, cond) = \
+                    tuple(self.defer(inst[2:4])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:4]))
 
                 # Construct instruction
                 op = Redor(lid, sort, cond)
@@ -568,18 +582,22 @@ class Parser:
                 # Sanity check: verify that instruction is well formed
                 assert len(inst) >= 4,\
                     "redand instruction must be of the form: <lid> redand <srtid> <sid>. Found: " + line
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                cond = self.find_inst(int(inst[3]))
+                # Find the operands associated to this instruction or defer
+                (sort, cond) = \
+                    tuple(self.defer(inst[2:4])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:4]))
+                
                 # Construct instruction
                 op = Redand(lid, sort, cond)
             case "redxor":
                 # Sanity check: verify that instruction is well formed
                 assert len(inst) >= 4,\
                     "redxor instruction must be of the form: <lid> redxor <srtid> <sid>. Found: " + line
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                cond = self.find_inst(int(inst[3]))
+                # Find the operands associated to this instruction or defer
+                (sort, cond) = \
+                    tuple(self.defer(inst[2:4])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:4]))
+                
                 # Construct instruction
                 op = Redxor(lid, sort, cond)
 
@@ -588,10 +606,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> eq <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Eq(lid, sort, op1, op2)
@@ -601,10 +619,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> neq <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Neq(lid, sort, op1, op2)
@@ -614,10 +632,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> ugt <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Ugt(lid, sort, op1, op2)
@@ -627,10 +645,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> sgt <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Sgt(lid, sort, op1, op2)
@@ -640,10 +658,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> ugte <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Ugte(lid, sort, op1, op2)
@@ -653,10 +671,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> sgte <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Sgte(lid, sort, op1, op2)
@@ -666,10 +684,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> ult <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Ult(lid, sort, op1, op2)
@@ -679,10 +697,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> slt <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Slt(lid, sort, op1, op2)
@@ -692,10 +710,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> ulte <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Ulte(lid, sort, op1, op2)
@@ -705,10 +723,10 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sort instruction must be of the form: <lid> slte <sid> <op1> <op2>. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                op1 = self.find_inst(int(inst[3]))
-                op2 = self.find_inst(int(inst[4]))
+                # Find the operands associated to this instruction or defer
+                (sort, op1, op2) = \
+                    tuple(self.defer(inst[2:5])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:5]))
 
                 # Construct instruction
                 op = Slte(lid, sort, op1, op2)
@@ -718,9 +736,11 @@ class Parser:
                 assert len(inst) >= 5,\
                     "uext instruction must be of the form: <lid> uext <sid> <opid> <width> [<name>]. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                operand = self.find_inst(int(inst[3]))
+                # Find the operands associated to this instruction or defer
+                (sort, operand) = \
+                    tuple(self.defer(inst[2:4])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:4]))
+                
                 width = int(inst[4])
 
                 if len(inst) >= 6:
@@ -736,9 +756,11 @@ class Parser:
                 assert len(inst) >= 5,\
                     "sext instruction must be of the form: <lid> sext <sid> <opid> <width> [<name>]. Found: " + line
 
-                # Find the operands associated to this instruction
-                sort = self.find_inst(int(inst[2]))
-                operand = self.find_inst(int(inst[3]))
+                # Find the operands associated to this instruction or defer
+                (sort, operand) = \
+                    tuple(self.defer(inst[2:4])) if deferred else \
+                    tuple(map(lambda i: self.find_inst(int(i)), inst[2:4]))
+                
                 width = int(inst[4])
 
                 if len(inst) >= 6:
@@ -764,6 +786,8 @@ class Parser:
 
     # Parses the entire program in parallel
     def parsePar(self) -> list[Instruction]:
+        assert not self.done, "Parser must be cleared before being reused!"
+
         self.p = pool.map(self.parse_inst, self.p_str)
 
         # Create the context from the parsed program
@@ -772,9 +796,14 @@ class Parser:
         # Resolve all of the IDs in parallel
         self.p = pool.map(self.resolveIds, self.p)
 
+        # Parser is done parsing
+        self.done = True
+
 
     # Parse a standard btor2 file, does not handle custom instructions
     def parseSeq(self) -> list[Instruction]:
+        assert not self.done, "Parser must be cleared before being reused!"
+
         # Split the string into instructions and read them 1 by 1
         p = []
         for line in tqdm(self.p_str, desc="Parsing BTOR2"):
@@ -782,5 +811,9 @@ class Parser:
             op = self.parse_inst(line, deferred=False)
             if op is not None:
                 p.append(op)
+
+        # Parser is done parsing
+        self.done = True
+        
         return p
 
