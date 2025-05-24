@@ -17,7 +17,7 @@
 ##########################################################################
 
 from .program import *
-from parser import *
+from .parser import *
 from tqdm import tqdm
 
 # Old API for module parsing
@@ -76,7 +76,7 @@ class ModParser(Parser):
     # @param body: the list of instructions contained within the body
     # @param modules: the list of already parsed modules that can be referenced
     def parse_module_body(self, body: list[str]) -> list[Instruction]:
-        bodyParser = Parser()
+        bodyParser = Parser(body)
 
         for line in body:
             inst = line.split(" ")
@@ -113,7 +113,7 @@ class ModParser(Parser):
     # @param body: the list of instructions contained within the body
     # @param modules: the list of already parsed modules that can be referenced
     def parse_contract_body(self, body: list[str]) -> list[Instruction]:
-        bodyParser = Parser()
+        bodyParser = Parser(body)
         for line in body:
             inst = line.split(" ")
             if inst[0] == ";": # handle comments
@@ -152,7 +152,7 @@ class ModParser(Parser):
                 case "module":
                     name = symbols[1]
                     # Scan and parse the body
-                    (body, i) = self.scan_body(self.p_str, i)
+                    (body, i) = self.scan_body(i)
                     b = self.parse_module_body(body)
                     # Create and store the module
                     self.modules.append(Module(name, b))
@@ -160,7 +160,7 @@ class ModParser(Parser):
                 case "contract":
                     name = symbols[1]
                     assert self.check_name(name), f"Contract name {name} is not defined!"
-                    (body, i) = self.scan_body(self.p_str, i)
+                    (body, i) = self.scan_body(i)
                     body = self.parse_contract_body(body)
                     # Create and store the module
                     self.contracts.append(Contract(name, body))

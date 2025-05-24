@@ -50,12 +50,12 @@ class Parser:
     # ID must be correct.
     def find_inst(self, id: int) -> Instruction:
         inst = get_inst(self.p, id)
-        assert inst is not None, f"Undeclared instruction used with id: {id}"
+        #assert inst is not None, f"Undeclared instruction used with id: {id}"
         return inst
     
     # Defers the resolution of all operand IDs
     def defer(self, ids: list[str]) -> list[Instruction]:
-        return map(lambda id: Instruction(int(id)), ids)
+        return list(map(lambda id: Instruction(int(id)), ids))
 
     # Parses a single instruction
     # @param line: the current instruction that needs to be parsed
@@ -781,7 +781,7 @@ class Parser:
     def resolveIds(self, inst: Instruction) -> Instruction:
         return Instruction( \
             inst.lid, inst.inst, \
-            map(lambda op: self.context.get(op.lid), inst.operands) \
+            list(map(lambda op: self.context.get(op.lid), inst.operands)) \
         )
 
     # Parses the entire program in parallel
