@@ -26,9 +26,9 @@ pool = multiprocessing.Pool()
 class Parser:
     # @param{p_str: list[str]}: list of lines to parse
     def __init__(self, p_str: list[str]):
-        self.p = []
-        self.p_str = p_str
-        self.context = {}
+        self.p : list[Instruction] = []
+        self.p_str : list[str] = p_str
+        self.context : dict[int, Instruction] = {}
 
     def clear(self):
         self.p = []
@@ -55,7 +55,7 @@ class Parser:
     # Parses a single instruction
     # @param line: the current instruction that needs to be parsed
     # @param p: the current parsed state of the program
-    def parse_inst(self, line: str) -> Instruction:
+    def parse_inst(self, line: str, deferred=True) -> Instruction:
         inst = line.split(" ")
         # BTOR comment
         if inst[0] == ";":
@@ -77,8 +77,9 @@ class Parser:
                 assert inst[2] in sort_tags,\
                     f"sort must be of type bitvector or array! Found: {inst[2]}"
 
-                # Construct instruction
-                op = Sort(lid, inst[2], int(inst[3]))
+                # Construct instruction, defer if required
+                op = self.defer(inst[3]) if deferred else \
+                        Sort(lid, inst[2], int(inst[3]))
 
             case "input":
                 # Sanity check: verify that instruction is well formed
@@ -102,7 +103,7 @@ class Parser:
                     "output instruction must be of the form: <lid> output <opid> [name]. Found: " + line
 
                 # Set a temporary instruction to be resolved later
-                out = self.defer(inst[2])[0]
+                out = self.find_inst(int(inst[2]))
 
                 if len(inst) >= 4:
                     name = inst[3].strip()
@@ -118,7 +119,7 @@ class Parser:
                     "sort instruction must be of the form: <lid> bad <opid>. Found: " + line
 
                 # Find the op associated to this instruction
-                cond = Instruction(int(inst[2]))  # self.find_inst(int(inst[2]))
+                cond = self.find_inst(int(inst[2]))
 
                 # Construct instruction
                 op = Bad(lid, cond)
@@ -129,7 +130,7 @@ class Parser:
                     "sort instruction must be of the form: <lid> constraint <opid>. Found: " + line
 
                 # Find the op associated to this instruction
-                cond = Instruction(int(inst[2]))  # self.find_inst(int(inst[2]))
+                cond = self.find_inst(int(inst[2]))
 
                 # Construct instruction
                 op = Constraint(lid, cond)
@@ -745,6 +746,7 @@ class Parser:
                 print(f"Unsupported operation type: {tag} in {line}")
                 exit(1)
         return op
+    
 
     # Resolves the IDs of all of the operands
     def resolveIds(self, inst: Instruction) -> Instruction:
@@ -769,7 +771,8 @@ class Parser:
         # Split the string into instructions and read them 1 by 1
         p = []
         for line in tqdm(self.p_str, desc="Parsing BTOR2"):
-            op = self.parse_inst(line)
+            # Parse instructions in an eager manner
+            op = self.parse_inst(line, deferred=False)
             if op is not None:
                 p.append(op)
         return p

@@ -137,17 +137,17 @@ class ModParser(Parser):
         return bodyParser.p
 
     # Parse an entire file that can contain contracts and modules
-    def parse_file(self, inp: list[str]) -> Program:
+    def parse_file(self) -> Program:
         i = 0
-        while i < len(inp):
-            symbols = inp[i].strip().split(" ")
+        while i < len(self.p_str):
+            symbols = self.p_str[i].strip().split(" ")
             # Check whether it's a module or a contract
             tag = symbols[0]
             match tag:
                 case "module":
                     name = symbols[1]
                     # Scan and parse the body
-                    (body, i) = self.scan_body(inp, i)
+                    (body, i) = self.scan_body(self.p_str, i)
                     b = self.parse_module_body(body)
                     # Create and store the module
                     self.modules.append(Module(name, b))
@@ -155,7 +155,7 @@ class ModParser(Parser):
                 case "contract":
                     name = symbols[1]
                     assert self.check_name(name), f"Contract name {name} is not defined!"
-                    (body, i) = self.scan_body(inp, i)
+                    (body, i) = self.scan_body(self.p_str, i)
                     body = self.parse_contract_body(body)
                     # Create and store the module
                     self.contracts.append(Contract(name, body))
