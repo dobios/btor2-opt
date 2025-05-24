@@ -46,7 +46,7 @@ structure_tags = ["module", "contract"]
 #   True: instruction is part of the btor2 spec
 #   False: instruction is a custom extension for btor-opt
 class Instruction:
-    def __init__(self, lid: int, inst: str, operands = [], is_standard=True):
+    def __init__(self, lid: int, inst: str | None = None, operands = [], is_standard=True):
         self.lid = lid
         self.inst = inst
         self.operands = operands
