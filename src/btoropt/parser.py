@@ -26,8 +26,10 @@ pool = multiprocessing.Pool()
 def parse(p_str: list[str], par=False) -> list[Instruction]:
     parse = Parser(p_str)
     if par:
-        return parse.parsePar()
-    return parse.parseSeq()
+        parse.parsePar()
+    else: 
+        parse.parseSeq()
+    return parse.p 
 
 # Parses a given btor2 program
 class Parser:
@@ -50,7 +52,9 @@ class Parser:
     # ID must be correct.
     def find_inst(self, id: int) -> Instruction:
         inst = get_inst(self.p, id)
-        #assert inst is not None, f"Undeclared instruction used with id: {id}"
+        if inst is None:
+            print(self.p)
+            assert False, f"Undeclared instruction used with id: {id}"
         return inst
     
     # Defers the resolution of all operand IDs
@@ -785,7 +789,7 @@ class Parser:
         )
 
     # Parses the entire program in parallel
-    def parsePar(self) -> list[Instruction]:
+    def parsePar(self) -> None:
         assert not self.done, "Parser must be cleared before being reused!"
 
         self.p = pool.map(self.parse_inst, self.p_str)
@@ -801,19 +805,16 @@ class Parser:
 
 
     # Parse a standard btor2 file, does not handle custom instructions
-    def parseSeq(self) -> list[Instruction]:
+    def parseSeq(self) -> None:
         assert not self.done, "Parser must be cleared before being reused!"
 
         # Split the string into instructions and read them 1 by 1
-        p = []
         for line in tqdm(self.p_str, desc="Parsing BTOR2"):
             # Parse instructions in an eager manner
             op = self.parse_inst(line, deferred=False)
             if op is not None:
-                p.append(op)
+                self.p.append(op)
 
         # Parser is done parsing
         self.done = True
-        
-        return p
 

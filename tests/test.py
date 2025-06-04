@@ -39,6 +39,29 @@ class BTORTestParser(unittest.TestCase):
 
         print("test passed")
 
+    def test_basic(self):
+        p = parse(["1 sort bitvector 1"])
+        self.assertEqual(p[0].inst, "sort")
+        self.assertEqual(len(p), 1)
+
+        print("test basic passed")
+
+    def test_simple(self):
+        p = parse([ \
+            "1 sort bitvector 1", \
+            "2 input 1 a", \
+            "3 const 1 1", \
+            "4 or 1 2 3", \
+            "5 eq 1 2 3", \
+            "6 not 1 5", \
+            "7 bad 6" \
+        ])
+        self.assertEqual(p[0].inst, "sort")
+        self.assertEqual(len(p), 7)
+
+        print("test simple passed")
+
+
     def test_modular(self):
             p: Program = parse_file(parsewrapper("tests/btor/modular.btor"))
             self.assertIsNotNone(p)

@@ -69,7 +69,7 @@ class ModParser(Parser):
         assert self.check_name(ref_mod), f"Named module {ref_mod} is undefined!"
 
         module = self.get_module(ref_mod)
-        val = self.find_inst(module.body, int(inst[3]))
+        val = get_inst(module.body, int(inst[3]))
         return Ref(int(inst[0]), ref_mod, val)
 
     # Parse a module's pre-scanned body
