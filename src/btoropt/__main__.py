@@ -31,7 +31,8 @@ MODE_TYPE = Enum('Mode', [('Seq', 0), ('Modular', 1), ('Def', 2)])
 def main():
     # Retrieve flags
     if len(sys.argv) < 3:
-        print(f"Usage: btoropt [optional](--{MOD}, --{DEF}) <file.btor2> <pass_names_in_order> ...")
+        # print(f"Usage: btoropt [optional](--{MOD}, --{DEF}) <file.btor2> <pass_names_in_order> ...")
+        print(f"Usage: btoropt [optional](--{DEF}) <file.btor2> <pass_names_in_order> ...")
         exit(1)
 
     # Check options
@@ -45,8 +46,11 @@ def main():
             print(f"Invalid option given: {option}")
             exit(1)
         else:
+            # mode = \
+            #     MODE_TYPE.Modular if option == MOD else \
+            #     MODE_TYPE.Def     if option == DEF else \
+            #     MODE_TYPE.Seq
             mode = \
-                MODE_TYPE.Modular if option == MOD else \
                 MODE_TYPE.Def     if option == DEF else \
                 MODE_TYPE.Seq
         base += 1
