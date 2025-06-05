@@ -61,21 +61,24 @@ class Instruction:
     def move(self, lid: int):
         self.lid = lid
 
-    def eq(self, inst) -> bool:
-        return self.operands == inst.operands and self.inst == inst.inst
+    # Checks that our instruction is in a given program
+    def isin(self, p: list) -> bool:
+        return all([inst == self for inst in p])
 
-    def isin(self, p) -> bool:
-        for inst in p:
-            if self.eq(inst):
-                return True
-        return False
-
+    # Generic serialization is roughly the same for most instructions
     def serialize(self) -> str:
         assert all([isinstance(op, Instruction) or isinstance(op, int) for op in self.operands]), \
             "Operands must be instructions or integers, fails for operands: %d." % self.operands
         return str(self.lid) + " " + self.inst + " " + \
-            ' '.join([(str(op.lid) if isinstance(op, Instruction) else str(op)) + " " \
+            ' '.join([(str(op.lid) if isinstance(op, Instruction) else str(op)) \
                       for op in self.operands ])
+    
+    # Define deep equality for instructions
+    def __eq__(self, value):
+        return isinstance(value, self.__class__) and \
+            (self.lid == value.lid) and \
+            (self.inst == value.inst) and \
+            all([s_op == v_op for (s_op, v_op) in zip(self.operands, value.operands)])
 
 def serialize_p(p: list[Instruction]) -> str:
     return reduce(lambda acc, s: acc + s.serialize() + "\n", p, "")
@@ -116,7 +119,7 @@ class Input(Instruction):
         return super().eq(inst) and self.name == inst.name
 
     def serialize(self) -> str:
-        return super().serialize() + self.name
+        return super().serialize() + " " + self.name
 
 
 class Output(Instruction):
@@ -188,7 +191,7 @@ class Constd(Instruction):
         return super().eq(inst) and self.value == inst.value
 
     def serialize(self) -> str:
-        return super().serialize() + str(self.value)
+        return super().serialize() + " " + str(self.value)
 
 class Consth(Instruction):
     def __init__(self, lid: int, sort: Sort, value: int):
@@ -200,7 +203,7 @@ class Consth(Instruction):
         return super().eq(inst) and self.value == inst.value
 
     def serialize(self) -> str:
-        return super().serialize() + str(self.value)
+        return super().serialize() + " " + str(self.value)
 
 class Const(Instruction):
     def __init__(self, lid: int, sort: Sort, value: int):
@@ -212,7 +215,7 @@ class Const(Instruction):
         return super().eq(inst) and self.value == inst.value
 
     def serialize(self) -> str:
-        return super().serialize() + str(self.value)
+        return super().serialize() + " " + str(self.value)
 
 ## State related instructions ##
 # States are declared using a sort and a name
@@ -226,7 +229,7 @@ class State(Instruction):
         return super().eq(inst) and self.name == inst.name
 
     def serialize(self) -> str:
-        return super().serialize() + self.name
+        return super().serialize() + " " + self.name
 
 class Init(Instruction):
     def __init__(self, lid: int, sort: Sort, state: Instruction, constval: Instruction):
@@ -248,7 +251,7 @@ class Slice(Instruction):
         return super().eq(inst) and self.highbit == inst.highbit and self.lowbit == inst.lowbit
 
     def serialize(self) -> str:
-        return super().serialize() + str(self.width) + " " + str(self.lowbit)
+        return super().serialize() + " " + str(self.width) + " " + str(self.lowbit)
 
 class Ite(Instruction):
     def __init__(self, lid: int, sort: Sort, cond: Instruction, t: Instruction, f: Instruction):

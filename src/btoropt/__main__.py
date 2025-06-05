@@ -24,14 +24,14 @@ from enum import Enum
 import sys
 
 MOD = 'modular'
-PAR = 'par'
-options = [MOD, PAR]
-MODE_TYPE = Enum('Mode', [('Seq', 0), ('Modular', 1), ('Par', 2)])
+DEF = 'def'
+options = [MOD, DEF]
+MODE_TYPE = Enum('Mode', [('Seq', 0), ('Modular', 1), ('Def', 2)])
 
 def main():
     # Retrieve flags
     if len(sys.argv) < 3:
-        print(f"Usage: btoropt [optional](--{MOD}, --{PAR}) <file.btor2> <pass_names_in_order> ...")
+        print(f"Usage: btoropt [optional](--{MOD}, --{DEF}) <file.btor2> <pass_names_in_order> ...")
         exit(1)
 
     # Check options
@@ -47,7 +47,7 @@ def main():
         else:
             mode = \
                 MODE_TYPE.Modular if option == MOD else \
-                MODE_TYPE.Par     if option == PAR else \
+                MODE_TYPE.Def     if option == DEF else \
                 MODE_TYPE.Seq
         base += 1
         
@@ -64,8 +64,8 @@ def main():
         btor2 = parser.parse_file(btor2str)
     else:
         parser = Parser(btor2str)
-        if mode == MODE_TYPE.Par:
-            btor2 = parser.parsePar()
+        if mode == MODE_TYPE.Def:
+            btor2 = parser.parseDeferred()
         else:
             btor2 = parser.parseSeq()
     

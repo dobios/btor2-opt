@@ -23,10 +23,10 @@ import multiprocessing
 pool = multiprocessing.Pool()
 
 # Trying to maintain original parser API
-def parse(p_str: list[str], par=False) -> list[Instruction]:
+def parse(p_str: list[str], deferred=False) -> list[Instruction]:
     parse = Parser(p_str)
-    if par:
-        parse.parsePar()
+    if deferred:
+        parse.parseDeferred()
     else: 
         parse.parseSeq()
     return parse.p 
@@ -783,22 +783,20 @@ class Parser:
 
     # Resolves the IDs of all of the operands
     def resolveIds(self, inst: Instruction) -> Instruction:
-        return Instruction( \
-            inst.lid, inst.inst, \
-            list(map(lambda op: self.context.get(op.lid), inst.operands)) \
-        )
+        inst.operands = list(map(lambda op: self.context.get(op.lid), inst.operands)) 
+        return inst
 
-    # Parses the entire program in parallel
-    def parsePar(self) -> None:
+    # Parses the entire program using deferred operand resolution
+    def parseDeferred(self) -> None:
         assert not self.done, "Parser must be cleared before being reused!"
 
-        self.p = pool.map(self.parse_inst, self.p_str)
+        self.p = list(map(self.parse_inst, self.p_str))
 
         # Create the context from the parsed program
         self.context = dict(map(lambda inst: (inst.lid, inst), self.p))
 
         # Resolve all of the IDs in parallel
-        self.p = pool.map(self.resolveIds, self.p)
+        self.p = list(map(self.resolveIds, self.p))
 
         # Parser is done parsing
         self.done = True
