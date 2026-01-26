@@ -48,7 +48,7 @@ tomli==2.0.1
     #   pip-tools
 typing-extensions==4.12.2
     # via black
-wheel==0.43.0
+wheel>=0.46.2
     # via pip-tools
 tqdm==4.67.1
 
