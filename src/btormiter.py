@@ -94,12 +94,16 @@ def create_btor_miter(btor_filename1: str, btor_filename2: str) -> list[Instruct
 def run_btormc(miter_filename: str):
     btormc_command = ["btormc", miter_filename]
 
-    completed_process = subprocess.run(
-    btormc_command,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE
-    )
-
+    try:
+        completed_process = subprocess.run(
+        btormc_command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+        )
+    except FileNotFoundError:
+        return("\nError: btormc was not found.Install Boolector separately and ensure btormc is in your path.")
+    
+    
     btormc_run_output = completed_process.stdout.decode("utf-8").strip()
 
     if btormc_run_output.startswith("sat"):
@@ -108,9 +112,10 @@ def run_btormc(miter_filename: str):
     else:
         return "\nThese 2 btor2 programs are Equivalent."
 
-def check_equivalence(btor_filename1: str, btor_filename2: str):
-    # 2 arguments for the create_miter() function
-    btor_miter_circuit = create_btor_miter(btor_filename1,btor_filename2) 
+def check_equivalence(btor_filename1: str, btor_filename2: str, output_filename: str | None = None):
+    # generate the btor miter
+    btor_miter_circuit = create_btor_miter(
+        btor_filename1,btor_filename2) 
 
     # extract the btor2 filenames without the extensions
     btor_name1 = Path(btor_filename1).stem
@@ -121,12 +126,12 @@ def check_equivalence(btor_filename1: str, btor_filename2: str):
         miter_filename = Path(output_filename)
     
     else:
-        # then combine those extracted filenames to obtain a unique miter circuit btor2 filename - so each unique pair of btor equivalency checks can be saved
+        # otherwise generate unique miter filename
         miter_filename = Path("tests/miter") / f"{btor_name1}_{btor_name2}_miter.btor2"
         
-    # now, adding in the automation workflow which should generate the miter circuit, save that output to a miter circuit btor2 file, run btormc on that btor miter circuit file, and produce the equivalent/non-equivalent printed results automatically to the user, all using btor_automated.py functions
+    # save generated miter circuit output in a btor2 file
     with open(miter_filename, "w") as file:
-        file.write(serialize_p(btor_miter_circuit)) # saves the miter circuit output in a btor2 file
+        file.write(serialize_p(btor_miter_circuit)) 
 
     # runs the equivalence check using btormc on the miter circuit
     # btormc should print equivalency check results and counterexample
@@ -135,67 +140,94 @@ def check_equivalence(btor_filename1: str, btor_filename2: str):
     return btor_name1, btor_name2, result
 
 def main():
-    # requires only the firrtl functionality
-    # btormiter design.fir
-    if len(sys.argv) == 2:
-        p = create_miter(sys.argv[1])
-        print(serialize_p(p))
-        return
+
+    # check for optional flags - no hardcoded argument order
+    run_btormc_flag = "--btormc" in sys.argv
+    output_filename = None
+
+    if "-o" in sys.argv:
+        output_index = sys.argv.index("-o")
+
+        # check if an true output filename was given
+        if output_index + 1 >= len(sys.argv):
+            print("Error: -o requires output filename to follow it.")
+            sys.exit(1)
+        output_filename = sys.argv[output_index + 1]
+
+    # obtain actual input files from argument list - hardcoded order of input files relative to position of other flags
+    input_files = []
+    skip_not_file = False
     
-    # Requires only one pair of BTOR2 files
-    # btormiter file1.btor2 file2.btor2 -o out.btor2 [len = 5]
-    if len(sys.argv) == 5 and sys.argv[3] == "-o":
+    for arg in sys.argv[1:]:
+        if skip_not_file:
+            skip_not_file = False
+            continue
+        if arg == "--btormc":
+            skip_not_file = False
+            continue
+        if arg == "-o":
+            skip_not_file = True
+            continue
 
-        btor_file1 = sys.argv[1]
-        btor_file2 = sys.argv[2]
-        output_filename = sys.argv[4]
+        input_files.append(arg)
 
+    # firrtl functionality: btormiter design.fir
+    if len(input_files) == 1:
+
+        p = create_miter(input_files[0])
+
+        print(serialize_p(p))
+
+        return
+
+    # btor2 functionality: btormiter file1.btor2 file2.btor2
+    if  len(input_files) == 2:
+
+        btor_file1 = input_files[0]
+        btor_file2 = input_files[1]
+
+        # If the user wants to use btormc, generate miter and run      
+        # equivalence checking
+        if run_btormc_flag:
+
+            btor_name1, btor_name2, result = check_equivalence(
+                btor_file1,
+                btor_file2,
+                output_filename
+            )
+            print(
+                f"\nEquivalence check for "
+                f"{btor_name1} and {btor_name2}:"
+            )
+            print(result)
+            
+            return
+
+        # Otherwise only generate the miter and tool used for 
+        # equivalency check is up to user preference
         p = create_btor_miter(
             btor_file1,
             btor_file2
         )
-
-        with open(output_filename, "w") as file:
-            file.write(serialize_p(p))
-
-        return
-    
-    # btor2 pair mode:
-    # btormiter file1.btor2 file2.btor2 OR
-    # btormiter file1.btor2 file2.btor2
-    #           file3.btor2 file4.btor2...
-
-    # Must have at least one pair and an even number of BTOR2 files
-    if len(sys.argv) >= 3 and (len(sys.argv) - 1) % 2 == 0:
-
-        # Move through command-line arguments two at a time, inherently making every two btor2 files as one equivalence-check pair - skip every 2 when iterating bc last 2 files taken into account per iteration
-        for i in range(1, len(sys.argv), 2):
-
-            btor_file1 = sys.argv[i]
-            btor_file2 = sys.argv[i + 1]
-
-            p = create_btor_miter(
-                btor_file1,
-                btor_file2
-            )
-
-            print(
-                f"\nMiter for {btor_file1} "
-                f"and {btor_file2}:"
-            )
-
+        # Save miter circuit if -o is given
+        if output_filename is not None:
+            with open(output_filename, "w") as file:
+                file.write(
+                    serialize_p(p)
+                )
+        # Otherwise just print the generated miter
+        else:
             print(serialize_p(p))
 
         return
 
-    # in case control is not taken to any of the above branches, an invalid command has been sent:
+    # error out for any other number of input files as invalid
     print(
         "Error:\nUsage:\n"
         "  btormiter <fir_design.fir>\n"
+        "  btormiter <file1.btor2> <file2.btor2>\n"
         "  btormiter <file1.btor2> <file2.btor2> "
-        "[<file3.btor2> <file4.btor2> ...]\n"
-        "  btormiter <file1.btor2> <file2.btor2> "
-        "-o <output_file.btor2>"
+        "[-o <output_file.btor2>] [--btormc]"
     )
 
     sys.exit(1)

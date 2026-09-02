@@ -20,12 +20,11 @@ python -m unittest tests/test.py
 This repo contains two main scripts:
   - `btoropt`: Takes a `.btor2` file and a list of pass names as argument and prints out the transformed result.
   - `btormiter`: Generates miter circuits for equivalence checking. The original functionality takes a `.fir` file as input and runs it through `firrtl` and `firtool` to obtain two `.btor2` designs which are then merged into a single miter circuit before being returned to the user. Note that this requires having `firrtl` and `firtool` in your path, specifically a [version of `firtool` that has the `--btor2` flag](https://github.com/llvm/circt/pull/6947).
-  - `btormiter` also supports directly providing pairs of `.btor2` files for automated miter generation and equivalence checking:
-    - Two `.btor2` programs can be provided directly, and `btormiter` generates a miter circuit that compares their outputs: `btormiter file1.btor2 file2.btor2`
-    - The generated miter circuit is automatically checked using `btormc`, and the equivalence result is returned to the user.
-    - Multiple pairs of `.btor2` files can be provided in the same command, allowing multiple equivalence checks to be run automatically: `btormiter file1.btor2 file2.btor2 file3.btor2 file4.btor2 ...`
-    - For a single pair of `.btor2` files, the generated miter circuit can be written to a user-specified output file using `-o`: `btormiter file1.btor2 file2.btor2 -o out.btor2`
-    - Equivalence checking using `btormc` requires Boolector to be installed separately and `btormc` to be available in the user's path. Boolector is not included with this repository.
+- `btormiter` also supports directly providing two `.btor2` files for miter generation and optional equivalence checking:
+  - `btormiter file1.btor2 file2.btor2` generates and returns the miter circuit.
+  - Use `-o out.btor2` to save the generated miter to a file.
+  - Use `--btormc` to optionally check the generated miter with `btormc`; otherwise, the miter can be passed to any other user-preferred verification tool.
+    - `btormc` requires Boolector to be installed separately and available in the user's path. Boolector is not included with this repository.
 
 The rest of the code can be found in the `src` folder, which contains a basic parser for `btor2` (not entirely complete, but supports anything `firtool --btor2` can produce), an internal representation of the language and a simple pass infrastructure, where you can add any of you custom passes.  
 
