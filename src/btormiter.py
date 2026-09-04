@@ -1,6 +1,6 @@
 ##########################################################################
 # BTOR2 parser, code optimizer, and circuit miter
-# Copyright (C) 2026  Amelia Dobis, Nidhi Lawange
+# Copyright (C) 2024-2026  Amelia Dobis, Nidhi Lawange
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,9 +19,7 @@
 from btoropt.program import *
 from btoropt.parser import *
 import os
-import subprocess
 import sys
-from pathlib import Path
 
 def create_lec_assertion(out1: Instruction, out2: Instruction, base_lid: int) -> list[Instruction]:
     op1 = out1.operands[0]
@@ -91,117 +89,46 @@ def create_btor_miter(btor_filename1: str, btor_filename2: str) -> list[Instruct
 
     return merge(p1, p2)
 
-def run_btormc(miter_filename: str):
-    btormc_command = ["btormc", miter_filename]
-
-    try:
-        completed_process = subprocess.run(
-        btormc_command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
-        )
-    except FileNotFoundError:
-        return("\nError: btormc was not found.Install Boolector separately and ensure btormc is in your path.")
-    
-    
-    btormc_run_output = completed_process.stdout.decode("utf-8").strip()
-
-    if btormc_run_output.startswith("sat"):
-        return "\nThese 2 btor2 programs are NOT Equivalent."
-        #print(btormc_run_output)  # keep btormc's counterexample
-    else:
-        return "\nThese 2 btor2 programs are Equivalent."
-
-def check_equivalence(btor_filename1: str, btor_filename2: str, output_filename: str | None = None):
-    # generate the btor miter
-    btor_miter_circuit = create_btor_miter(
-        btor_filename1,btor_filename2) 
-
-    # extract the btor2 filenames without the extensions
-    btor_name1 = Path(btor_filename1).stem
-    btor_name2 = Path(btor_filename2).stem
-
-    # if the user gave -o, use that filename instead of the combined pathnames as the miter circuit filename
-    if output_filename is not None:
-        miter_filename = Path(output_filename)
-    
-    else:
-        # otherwise generate unique miter filename
-        miter_filename = Path("tests/miter") / f"{btor_name1}_{btor_name2}_miter.btor2"
-        
-    # save generated miter circuit output in a btor2 file
-    with open(miter_filename, "w") as file:
-        file.write(serialize_p(btor_miter_circuit)) 
-
-    # runs the equivalence check using btormc on the miter circuit
-    # btormc should print equivalency check results and counterexample
-    result = run_btormc(str(miter_filename))
-
-    return btor_name1, btor_name2, result
 
 def main():
 
-    # check for optional flags - no hardcoded argument order
-    run_btormc_flag = "--btormc" in sys.argv
-    output_filename = None
-
+    # obtain actual input files from argument list - hardcoded order of input files relative to position of other flags
+    in_files = []
     if "-o" in sys.argv:
         output_index = sys.argv.index("-o")
 
-        # check if an true output filename was given
         if output_index + 1 >= len(sys.argv):
-            print("Error: -o requires output filename to follow it.")
+            print("Error: -o requires an output filename.")
             sys.exit(1)
-        output_filename = sys.argv[output_index + 1]
 
-    # obtain actual input files from argument list - hardcoded order of input files relative to position of other flags
-    input_files = []
-    skip_not_file = False
-    
-    for arg in sys.argv[1:]:
-        if skip_not_file:
-            skip_not_file = False
-            continue
-        if arg == "--btormc":
-            skip_not_file = False
-            continue
-        if arg == "-o":
-            skip_not_file = True
-            continue
+    out_file = next(
+    (
+        sys.argv[i + 1]
+        for i in range(len(sys.argv) - 1)
+        if sys.argv[i] == "-o"
+    ), None)
 
-        input_files.append(arg)
+    in_files = [
+    file
+    for file in sys.argv[1:]
+    if file != "-o" and file != out_file
+    ]
 
     # firrtl functionality: btormiter design.fir
-    if len(input_files) == 1:
+    if len(in_files) == 1 and in_files[0].endswith(".fir"):
 
-        p = create_miter(input_files[0])
+        p = create_miter(in_files[0])
 
         print(serialize_p(p))
 
         return
 
     # btor2 functionality: btormiter file1.btor2 file2.btor2
-    if  len(input_files) == 2:
+    if  (len(in_files) == 2 and in_files[0].endswith(".btor2")
+    and in_files[1].endswith(".btor2")):
 
-        btor_file1 = input_files[0]
-        btor_file2 = input_files[1]
-
-        # If the user wants to use btormc, generate miter and run      
-        # equivalence checking
-        if run_btormc_flag:
-
-            btor_name1, btor_name2, result = check_equivalence(
-                btor_file1,
-                btor_file2,
-                output_filename
-            )
-            print(
-                f"\nEquivalence check for "
-                f"{btor_name1} and {btor_name2}:"
-            )
-            print(result)
-            
-            return
+        btor_file1 = in_files[0]
+        btor_file2 = in_files[1]   
 
         # Otherwise only generate the miter and tool used for 
         # equivalency check is up to user preference
@@ -210,11 +137,9 @@ def main():
             btor_file2
         )
         # Save miter circuit if -o is given
-        if output_filename is not None:
-            with open(output_filename, "w") as file:
-                file.write(
-                    serialize_p(p)
-                )
+        if out_file is not None:
+            with open(out_file, "w") as file:
+                file.write(serialize_p(p))
         # Otherwise just print the generated miter
         else:
             print(serialize_p(p))
@@ -223,12 +148,11 @@ def main():
 
     # error out for any other number of input files as invalid
     print(
-        "Error:\nUsage:\n"
-        "  btormiter <fir_design.fir>\n"
-        "  btormiter <file1.btor2> <file2.btor2>\n"
-        "  btormiter <file1.btor2> <file2.btor2> "
-        "[-o <output_file.btor2>] [--btormc]"
-    )
+    "Usage:\n"
+    "  btormiter <fir_design.fir>\n"
+    "  btormiter <file1.btor2> <file2.btor2> "
+    "[-o <output_file.btor2>]"
+    )   
 
     sys.exit(1)
 
