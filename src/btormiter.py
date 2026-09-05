@@ -1,6 +1,6 @@
 ##########################################################################
 # BTOR2 parser, code optimizer, and circuit miter
-# Copyright (C) 2024  Amelia Dobis
+# Copyright (C) 2024-2026  Amelia Dobis, Nidhi Lawange
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,14 +19,15 @@
 from btoropt.program import *
 from btoropt.parser import *
 import os
-import subprocess
 import sys
 
 def create_lec_assertion(out1: Instruction, out2: Instruction, base_lid: int) -> list[Instruction]:
     op1 = out1.operands[0]
     op2 = out2.operands[0]
-    sort = Sort(base_lid, 1)
-    neq = Neq(base_lid + 1, [sort, op1, op2])
+    # second argument of Sort should be a string for the sort type
+    sort = Sort(base_lid, "bitvec", 1)
+    # second argument of Neq should not be a list
+    neq = Neq(base_lid + 1, sort, op1, op2) 
     bad = Bad(base_lid + 2, neq)
     return [sort, neq, bad]
 
@@ -52,9 +53,9 @@ def merge(p1: list[Instruction], p2: list[Instruction]) -> list[Instruction]:
             if isinstance(oper, Input):
                 if oper.isin(inputs):
                     oper = next(inp for inp in inputs if inp.eq(oper))
-    out2 = p2[len(new_p2) - 1]
-
-    lec = create_lec_assertion(out1, out2, new_p2[len(new_p2) - 1].lid)
+    
+    out2 = new_p2[-1]
+    lec = create_lec_assertion(out1, out2, new_p2[-1].lid)
 
     # Remove outputs
     p1.pop()
@@ -73,23 +74,87 @@ def create_miter(fir_filename: str) -> list[Instruction]:
     sfc_p = ""
     with open("tmp.btor2", "r") as file:
         sfc_p = file.read()
+    
+    
+# Given 2 btor2 filenames, creates a miter circuit from the two outputs 
+def create_btor_miter(btor_filename1: str, btor_filename2: str) -> list[Instruction]:
+    with open(btor_filename1, "r") as file1:
+        file1_text = file1.read()
 
-    # Run the FIRRTL design through firtool
-    circt_p = subprocess.run(f"firtool --btor2 {fir_filename}", stdout=subprocess.PIPE).stdout.decode('utf-8')
+    with open(btor_filename2, "r") as file2:
+        file2_text = file2.read()
 
-    # Parse both files
-    p1 = parse(sfc_p)
-    p2 = parse(circt_p)
+    p1 = parse(file1_text.splitlines())
+    p2 = parse(file2_text.splitlines())
 
-    # Create the miter circt
     return merge(p1, p2)
 
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: python3 btor-miter.py <fir_design.fir>")
 
-    p = create_miter(sys.argv[1])
-    print(serialize_p(p))
+def main():
+
+    # obtain actual input files from argument list - hardcoded order of input files relative to position of other flags
+    in_files = []
+    if "-o" in sys.argv:
+        output_index = sys.argv.index("-o")
+
+        if output_index + 1 >= len(sys.argv):
+            print("Error: -o requires an output filename.")
+            sys.exit(1)
+
+    out_file = next(
+    (
+        sys.argv[i + 1]
+        for i in range(len(sys.argv) - 1)
+        if sys.argv[i] == "-o"
+    ), None)
+
+    in_files = [
+    file
+    for file in sys.argv[1:]
+    if file != "-o" and file != out_file
+    ]
+
+    # firrtl functionality: btormiter design.fir
+    if len(in_files) == 1 and in_files[0].endswith(".fir"):
+
+        p = create_miter(in_files[0])
+
+        print(serialize_p(p))
+
+        return
+
+    # btor2 functionality: btormiter file1.btor2 file2.btor2
+    if  (len(in_files) == 2 and in_files[0].endswith(".btor2")
+    and in_files[1].endswith(".btor2")):
+
+        btor_file1 = in_files[0]
+        btor_file2 = in_files[1]   
+
+        # Otherwise only generate the miter and tool used for 
+        # equivalency check is up to user preference
+        p = create_btor_miter(
+            btor_file1,
+            btor_file2
+        )
+        # Save miter circuit if -o is given
+        if out_file is not None:
+            with open(out_file, "w") as file:
+                file.write(serialize_p(p))
+        # Otherwise just print the generated miter
+        else:
+            print(serialize_p(p))
+
+        return
+
+    # error out for any other number of input files as invalid
+    print(
+    "Usage:\n"
+    "  btormiter <fir_design.fir>\n"
+    "  btormiter <file1.btor2> <file2.btor2> "
+    "[-o <output_file.btor2>]"
+    )   
+
+    sys.exit(1)
 
 if __name__ == "__main__":
     main()
