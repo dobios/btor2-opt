@@ -20,6 +20,9 @@ import unittest
 
 from src.btoropt.parser import *
 from src.btoropt.modparser import *
+from src.btormiter import *
+import os
+import sys
 
 def parsewrapper (filepath):
     btor2str: list[str] = []
@@ -104,6 +107,104 @@ class BTORTestParser(unittest.TestCase):
 
         print("differential test passed")
 
+class BTORMiterTest(unittest.TestCase):
+    """Checks whether btormiter generation is working properly"""
+
+    def test_create_btor_miter(self):
+        miter = create_btor_miter("tests/btor/adder1.btor2",
+        "tests/btor/adder2.btor2")
+        
+        miter_str = serialize_p(miter)
+
+        expected_miter = """1 sort bitvector 8
+2 input 1 a
+3 input 1 b
+4 add 1 2 3
+5 sort bitvector 8
+6 add 5 2 3
+7 sort bitvec 1
+8 neq 7 4 6
+9 bad 8
+"""
+        self.assertEqual(miter_str, expected_miter)
+        print("BTOR miter test passed")
+    
+    def test_diff_imp_miter(self):
+        """checks whether 2 different implementations of same btor design can be detected and merged into miter"""
+        miter = create_btor_miter("tests/btor/adder1.btor2",
+        "tests/btor/adder_swapped.btor2")
+
+        miter_str = serialize_p(miter)
+
+        expected_miter = """1 sort bitvector 8
+2 input 1 a
+3 input 1 b
+4 add 1 2 3
+5 sort bitvector 8
+6 add 5 3 2
+7 sort bitvec 1
+8 neq 7 4 6
+9 bad 8
+"""
+        self.assertEqual(miter_str, expected_miter)
+        print("BTOR different implementation same design miter test passed")
+    
+    def test_diff_design_miter(self):
+        """checks whether 2 non-equivalent btor designs can be detected and merged into miter"""
+        miter = create_btor_miter("tests/btor/adder1.btor2",
+        "tests/btor/sub.btor2")
+
+        miter_str = serialize_p(miter)
+
+        expected_miter = """1 sort bitvector 8
+2 input 1 a
+3 input 1 b
+4 add 1 2 3
+5 sort bitvector 8
+6 sub 5 2 3
+7 sort bitvec 1
+8 neq 7 4 6
+9 bad 8
+"""
+        self.assertEqual(miter_str, expected_miter)
+        print("BTOR miter different design test passed")
+
+    
+    def test_out_file(self):
+        """checks whether output file generation with -o working properly"""
+        out_miter_file = "tests/btor/miter_out.btor2"
+        # save actual cli args before temporarily changing them
+        test_btor_args = sys.argv
+        # manually set cli args for generating miter out file
+        sys.argv = [
+            "btormiter",
+            "tests/btor/adder1.btor2",
+            "tests/btor/adder2.btor2",
+            "-o",
+            out_miter_file
+        ]
+
+        # call main() to pass btor test miter generation to appropriate functions in unittest
+        main()
+
+        with open(out_miter_file, "r") as miter:
+            output_str = miter.read()
+        
+        expected_miter = """1 sort bitvector 8
+2 input 1 a
+3 input 1 b
+4 add 1 2 3
+5 sort bitvector 8
+6 add 5 2 3
+7 sort bitvec 1
+8 neq 7 4 6
+9 bad 8
+"""
+
+        self.assertEqual(output_str, expected_miter)
+        sys.argv = test_btor_args
+        os.remove(out_miter_file)
+        print("BTOR miter output file test passed")
 
     # def test_modular(self):
     #         p: Program = parse_file(parsewrapper("tests/btor/modular.btor"))
