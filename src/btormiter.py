@@ -16,8 +16,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ##########################################################################
 
-from btoropt.program import *
-from btoropt.parser import *
+from src.btoropt.program import *
+from src.btoropt.parser import *
 import os
 import sys
 
