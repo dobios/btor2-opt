@@ -1,0 +1,5 @@
+1 sort bitvector 8
+2 input 1 a
+3 input 1 b
+4 sub 1 2 3
+5 output 4
